@@ -1,0 +1,603 @@
+{
+	"info": {
+		"name": "Tour Backend API v2 - Demo",
+		"description": "Полный сценарий демо для хакатона: регистрация → создание объекта → бронирование → аналитика → AI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "propertyId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "ratePlanId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "bookingId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Auth",
+			"item": [
+				{
+					"name": "Register Partner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('token', response.token);",
+									"    pm.environment.set('token', response.token);",
+									"    console.log('Token saved:', response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"legalName\": \"Юрточный лагерь Демо\",\n  \"email\": \"demo@example.com\",\n  \"password\": \"secret123\",\n  \"phone\": \"+996700999999\",\n  \"inn\": \"99999999999999\",\n  \"type\": \"yurt_camp\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "register"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Existing Partner)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('token', response.token);",
+									"    pm.environment.set('token', response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"ala-archa@example.com\",\n  \"password\": \"secret123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Tourist Places (Public)",
+			"item": [
+				{
+					"name": "Get All Tourist Places",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/tourist-places?page=0&size=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "tourist-places"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tourist Places by Type (Mountain)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/tourist-places?type=mountain&region=Чуйская",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "tourist-places"],
+							"query": [
+								{
+									"key": "type",
+									"value": "mountain"
+								},
+								{
+									"key": "region",
+									"value": "Чуйская"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tourist Places Nearby (Ala-Archa)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/tourist-places/nearby?lat=42.56&lon=74.49&radiusKm=50",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "tourist-places", "nearby"],
+							"query": [
+								{
+									"key": "lat",
+									"value": "42.56"
+								},
+								{
+									"key": "lon",
+									"value": "74.49"
+								},
+								{
+									"key": "radiusKm",
+									"value": "50"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Properties",
+			"item": [
+				{
+					"name": "Get All Properties (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/properties?page=0&size=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "properties"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Properties Nearby (Ala-Archa)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/properties/nearby?lat=42.56&lng=74.49&radiusKm=50",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "properties", "nearby"],
+							"query": [
+								{
+									"key": "lat",
+									"value": "42.56"
+								},
+								{
+									"key": "lng",
+									"value": "74.49"
+								},
+								{
+									"key": "radiusKm",
+									"value": "50"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Property (Yurt Camp)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('propertyId', response.id);",
+									"    console.log('Property ID saved:', response.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Юрточный лагерь Демо\",\n  \"kind\": \"yurt_camp\",\n  \"addressText\": \"Ущелье Ала-Арча, 40 км от Бишкека\",\n  \"lat\": 42.56,\n  \"lng\": 74.49,\n  \"description\": \"Традиционные юрты в горах с видом на ущелье\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/properties",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "properties"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Rate Plans",
+			"item": [
+				{
+					"name": "Create Rate Plan",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('ratePlanId', response.id);",
+									"    console.log('Rate Plan ID saved:', response.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"propertyId\": \"{{propertyId}}\",\n  \"name\": \"Юрта стандарт (2 чел.)\",\n  \"retailRate\": 2500,\n  \"currency\": \"KGS\",\n  \"totalQty\": 6,\n  \"refundable\": true,\n  \"cancellationPolicy\": \"Бесплатная отмена за 24 часа\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/rate-plans",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "rate-plans"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Rate Plans by Property",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/rate-plans?propertyId={{propertyId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "rate-plans"],
+							"query": [
+								{
+									"key": "propertyId",
+									"value": "{{propertyId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Inventory",
+			"item": [
+				{
+					"name": "Bulk Update Inventory (Jun-Aug 2026)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ratePlanId\": \"{{ratePlanId}}\",\n  \"dateFrom\": \"2026-06-01\",\n  \"dateTo\": \"2026-08-31\",\n  \"availableQty\": 6,\n  \"retailRate\": 2500,\n  \"currency\": \"KGS\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/inventory/bulk",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "inventory", "bulk"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Inventory Availability",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/inventory?ratePlanId={{ratePlanId}}&dateFrom=2026-06-01&dateTo=2026-06-30",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "inventory"],
+							"query": [
+								{
+									"key": "ratePlanId",
+									"value": "{{ratePlanId}}"
+								},
+								{
+									"key": "dateFrom",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "dateTo",
+									"value": "2026-06-30"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6. Bookings",
+			"item": [
+				{
+					"name": "Create Booking",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('bookingId', response.id);",
+									"    console.log('Booking ID saved:', response.id);",
+									"    console.log('Booking Code:', response.bookingCode);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ratePlanId\": \"{{ratePlanId}}\",\n  \"checkIn\": \"2026-06-10\",\n  \"checkOut\": \"2026-06-13\",\n  \"guestName\": \"Айбек Усупов\",\n  \"guestEmail\": \"aibek@example.com\",\n  \"guestPhone\": \"+996555100001\",\n  \"qty\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/bookings",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "bookings"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Partner Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/bookings?page=0&size=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "bookings"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Booking",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "bookings", "{{bookingId}}", "cancel"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "7. Payments",
+			"item": [
+				{
+					"name": "Process Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bookingId\": \"{{bookingId}}\",\n  \"amount\": 15000,\n  \"paymentMethod\": \"card\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "8. Analytics",
+			"item": [
+				{
+					"name": "Get Analytics Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/analytics/summary",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "analytics", "summary"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "9. AI Recommendations",
+			"item": [
+				{
+					"name": "Get Price Hint",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/ai/price-hint?propertyId={{propertyId}}&date=2026-06-15",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "ai", "price-hint"],
+							"query": [
+								{
+									"key": "propertyId",
+									"value": "{{propertyId}}"
+								},
+								{
+									"key": "date",
+									"value": "2026-06-15"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

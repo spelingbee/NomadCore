@@ -1,0 +1,74 @@
+{
+  "nav": {
+    "overview": "Overview",
+    "properties": "Properties",
+    "inventory": "Inventory & Rates",
+    "packages": "Packages",
+    "bookings": "Bookings",
+    "channels": "Channels",
+    "reviews": "Reviews",
+    "notifications": "Notifications",
+    "scan": "QR Scanner"
+  },
+  "scan": {
+    "title": "QR Check-in",
+    "description": "Scan tourist QR code to register their arrival and collect data.",
+    "instructions": "Position the traveler's QR code within the frame to scan.",
+    "success": "Check-in Successful!",
+    "success_desc": "Data has been synchronized with the national tourism database.",
+    "processing": "Verifying QR Code...",
+    "scan_next": "Scan Next Tourist"
+  },
+  "properties": {
+    "title": "My Properties",
+    "description": "Manage your accommodations and listings",
+    "add_property": "Add Property"
+  },
+  "inventory": {
+    "title": "Inventory & Rates",
+    "description": "Manage availability and pricing by date",
+    "manage_properties": "Manage My Properties"
+  },
+  "dashboard": {
+    "title": "Partner Dashboard",
+    "description": "Real-time performance overview"
+  },
+  "bookings": {
+    "title": "Bookings",
+    "description": "View and manage all your bookings",
+    "stats": {
+      "total": "Total Bookings",
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "revenue": "Total Revenue"
+    },
+    "columns": {
+      "booking": "Booking",
+      "details": "Details",
+      "dates": "Dates",
+      "status": "Status",
+      "total": "Total"
+    }
+  },
+  "channels": {
+    "title": "Channel Manager",
+    "description": "Manage integrations and content distribution",
+    "status_connected": "Connected",
+    "status_pending": "Pending",
+    "status_disconnected": "Disconnected",
+    "connect": "Connect",
+    "tunduk_title": "Tunduk Travel",
+    "tunduk_desc": "National Tourism App (Single Window)",
+    "mtravel_title": "MTravel",
+    "mtravel_desc": "Banking tourism ecosystem & cashback",
+    "booking_title": "Booking.com",
+    "booking_desc": "Global OTA channel",
+    "kettik_title": "Kettik",
+    "kettik_desc": "Local traveler community"
+  },
+  "insights": {
+    "title": "Market Insights",
+    "cbi_demand": "EU Demand (CBI): High interest in eco-tourism in your region",
+    "unwto_trend": "UNWTO Trends: Authentic stays are growing in popularity"
+  }
+}

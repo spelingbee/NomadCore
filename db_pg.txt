@@ -1,0 +1,349 @@
+-- Extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Enums
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_type') THEN
+    CREATE TYPE partner_type AS ENUM ('yurt_camp','rest_point_operator','tour_operator','park_admin','guest_house','hotel');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'property_kind') THEN
+    CREATE TYPE property_kind AS ENUM ('yurt_camp','rest_point','national_park','guest_house','hotel');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'checkin_mode') THEN
+    CREATE TYPE checkin_mode AS ENUM ('online','offline_qr','manual');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pricing_mode') THEN
+    CREATE TYPE pricing_mode AS ENUM ('per_night','per_entry','per_person','per_vehicle','fixed_package');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'channel_kind') THEN
+    CREATE TYPE channel_kind AS ENUM ('direct','ota','bank_app','government_app','partner_api');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'booking_status') THEN
+    CREATE TYPE booking_status AS ENUM ('pending','confirmed','cancelled','completed');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_status') THEN
+    CREATE TYPE payment_status AS ENUM ('pending','paid','failed','refunded');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'event_type') THEN
+    CREATE TYPE event_type AS ENUM ('qr_scan','manual_checkin','plate_detected','gate_opened');
+  END IF;
+END$$;
+CREATE TABLE destination_areas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE,
+  kind TEXT,
+  parent_id UUID REFERENCES destination_areas(id),
+  region TEXT,
+  country TEXT DEFAULT 'KG',
+  center_lat DOUBLE PRECISION,
+  center_lng DOUBLE PRECISION,
+  boundary_geojson JSONB,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE location_points (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  destination_area_id UUID REFERENCES destination_areas(id),
+  name TEXT,
+  kind TEXT,
+  lat DOUBLE PRECISION,
+  lng DOUBLE PRECISION,
+  description TEXT,
+  status TEXT DEFAULT 'active'
+);
+CREATE TABLE partners (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  type partner_type,
+  legal_name TEXT,
+  display_name TEXT,
+  inn TEXT,
+  phone TEXT,
+  email TEXT,
+  verified_by_fund BOOLEAN DEFAULT FALSE,
+  verified_by_bank BOOLEAN DEFAULT FALSE,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE partner_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  partner_id UUID REFERENCES partners(id),
+  role TEXT,
+  full_name TEXT,
+  phone TEXT,
+  email TEXT,
+  password_hash TEXT,
+  status TEXT DEFAULT 'active',
+  last_login_at TIMESTAMP
+);
+CREATE TABLE properties (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  partner_id UUID REFERENCES partners(id),
+  destination_area_id UUID REFERENCES destination_areas(id),
+  location_point_id UUID REFERENCES location_points(id),
+  kind property_kind,
+  name TEXT,
+  description TEXT,
+  address_text TEXT,
+  lat DOUBLE PRECISION,
+  lng DOUBLE PRECISION,
+  checkin_mode checkin_mode,
+  official_status TEXT,
+  status TEXT DEFAULT 'active'
+);
+
+CREATE TABLE unit_types (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id),
+  kind TEXT,
+  name TEXT,
+  capacity_adults INT,
+  capacity_children INT,
+  total_inventory INT,
+  base_currency TEXT DEFAULT 'KGS',
+  status TEXT DEFAULT 'active'
+);
+
+CREATE TABLE services (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id),
+  name TEXT,
+  pricing_mode pricing_mode,
+  base_price NUMERIC,
+  currency TEXT,
+  status TEXT DEFAULT 'active'
+);
+
+CREATE TABLE experiences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  partner_id UUID REFERENCES partners(id),
+  destination_area_id UUID REFERENCES destination_areas(id),
+  name TEXT,
+  description TEXT,
+  duration_minutes INT,
+  capacity INT,
+  pricing_mode pricing_mode,
+  base_currency TEXT,
+  status TEXT DEFAULT 'active'
+);
+CREATE TABLE rate_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sellable_type TEXT,
+  sellable_id UUID,
+  name TEXT,
+  pricing_mode pricing_mode,
+  refundable BOOLEAN,
+  cancellation_policy TEXT,
+  min_stay INT,
+  max_stay INT,
+  status TEXT DEFAULT 'active'
+);
+
+CREATE TABLE inventory_daily (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sellable_type TEXT,
+  sellable_id UUID,
+  rate_plan_id UUID REFERENCES rate_plans(id),
+  date DATE,
+  available_qty INT,
+  net_rate NUMERIC,
+  retail_rate NUMERIC,
+  currency TEXT,
+  stop_sell BOOLEAN DEFAULT FALSE
+);
+
+-- 🔒 Locks (анти-овербукинг)
+CREATE TABLE inventory_locks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sellable_type TEXT,
+  sellable_id UUID,
+  date DATE,
+  qty INT,
+  expires_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- 📊 Ledger
+CREATE TABLE inventory_transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sellable_type TEXT,
+  sellable_id UUID,
+  date DATE,
+  change INT,
+  reason TEXT,
+  reference_id UUID,
+  created_at TIMESTAMP DEFAULT now()
+);
+CREATE TABLE channels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT,
+  name TEXT,
+  kind channel_kind,
+  status TEXT DEFAULT 'active'
+);
+
+CREATE TABLE channel_mappings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  channel_id UUID REFERENCES channels(id),
+  sellable_type TEXT,
+  sellable_id UUID,
+  rate_plan_id UUID REFERENCES rate_plans(id),
+  external_property_id TEXT,
+  external_unit_id TEXT,
+  external_rate_id TEXT,
+  price_modifier_type TEXT,
+  price_modifier_value NUMERIC,
+  enabled BOOLEAN DEFAULT TRUE
+);
+CREATE TABLE tour_packages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  partner_id UUID REFERENCES partners(id),
+  destination_area_id UUID REFERENCES destination_areas(id),
+  name TEXT,
+  description TEXT,
+  duration_days INT,
+  base_price NUMERIC,
+  retail_price NUMERIC,
+  currency TEXT,
+  status TEXT DEFAULT 'active'
+);
+
+CREATE TABLE tour_package_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  package_id UUID REFERENCES tour_packages(id),
+  item_type TEXT,
+  ref_id UUID,
+  day_number INT,
+  quantity INT,
+  included BOOLEAN DEFAULT TRUE
+);
+CREATE TABLE customers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  full_name TEXT,
+  email TEXT,
+  phone TEXT,
+  country_code TEXT,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE bookings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_code TEXT UNIQUE,
+  customer_id UUID REFERENCES customers(id),
+  channel_id UUID REFERENCES channels(id),
+  partner_id UUID REFERENCES partners(id),
+  status booking_status,
+  currency TEXT,
+  net_amount NUMERIC,
+  retail_amount NUMERIC,
+  commission_amount NUMERIC,
+  exchange_rate_snapshot NUMERIC,
+  booked_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE booking_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id UUID REFERENCES bookings(id),
+  sellable_type TEXT,
+  sellable_id UUID,
+  rate_plan_id UUID REFERENCES rate_plans(id),
+  date_from DATE,
+  date_to DATE,
+  qty INT,
+  net_amount NUMERIC,
+  retail_amount NUMERIC,
+  commission_amount NUMERIC,
+  cancellation_status TEXT DEFAULT 'none'
+);
+CREATE TABLE payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id UUID REFERENCES bookings(id),
+  provider TEXT,
+  payment_method TEXT,
+  amount NUMERIC,
+  currency TEXT,
+  status payment_status,
+  external_transaction_id TEXT,
+  paid_at TIMESTAMP
+);
+
+CREATE TABLE refunds (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  payment_id UUID REFERENCES payments(id),
+  amount NUMERIC,
+  reason TEXT,
+  status TEXT,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE partner_payouts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  partner_id UUID REFERENCES partners(id),
+  period_start DATE,
+  period_end DATE,
+  total_net NUMERIC,
+  commission NUMERIC,
+  payout_amount NUMERIC,
+  status TEXT
+);
+CREATE TABLE checkin_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_item_id UUID REFERENCES booking_items(id),
+  property_id UUID REFERENCES properties(id),
+  event_type event_type,
+  offline_recorded BOOLEAN,
+  event_time TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id UUID REFERENCES bookings(id),
+  rating INT,
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity TEXT,
+  entity_id UUID,
+  action TEXT,
+  old_value JSONB,
+  new_value JSONB,
+  changed_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID,
+  type TEXT,
+  channel TEXT,
+  status TEXT DEFAULT 'pending'
+);
+
+CREATE TABLE idempotency_keys (
+  key TEXT PRIMARY KEY,
+  response JSONB,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE webhook_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  type TEXT,
+  payload JSONB,
+  delivered BOOLEAN DEFAULT FALSE
+);
+ALTER TABLE properties ADD COLUMN metadata JSONB;
+ALTER TABLE experiences ADD COLUMN metadata JSONB;
+ALTER TABLE tour_packages ADD COLUMN metadata JSONB;
