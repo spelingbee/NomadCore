@@ -2,6 +2,7 @@
 import { Clock } from 'lucide-vue-next'
 import type { Experience } from '~/data/mock-data'
 import { cn } from '~/lib/utils'
+import PriceBadge from "../shared/PriceBadge.vue";
 
 interface ExperienceCardProps {
   experience: Experience

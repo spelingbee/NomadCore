@@ -20,8 +20,15 @@ const activeTabId = computed(() => {
   return 'home'
 })
 
+const authStore = useAuthStore()
+
 function onModeChange(mode: string) {
   router.push(`/${mode}`)
+}
+
+function onLogout() {
+  authStore.logout()
+  router.push('/traveler')
 }
 </script>
 
@@ -37,7 +44,20 @@ function onModeChange(mode: string) {
           <span class="font-bold">Nomad Core</span>
         </NuxtLink>
 
-        <ModeSwitcher current-mode="traveler" @mode-change="onModeChange" />
+        <div class="flex items-center gap-4">
+          <div class="hidden md:flex items-center gap-2">
+            <template v-if="authStore.isAuthenticated">
+              <Button variant="ghost" size="sm" @click="router.push('/traveler/bookings')">My Bookings</Button>
+              <Button variant="outline" size="sm" @click="onLogout">Logout</Button>
+            </template>
+            <template v-else>
+              <Button variant="ghost" size="sm" @click="router.push('/traveler/auth/login')">Login</Button>
+              <Button size="sm" @click="router.push('/traveler/auth/register')">Sign Up</Button>
+            </template>
+          </div>
+          <div class="w-px h-6 bg-border hidden md:block"></div>
+          <ModeSwitcher current-mode="traveler" @mode-change="onModeChange" />
+        </div>
       </div>
     </div>
 

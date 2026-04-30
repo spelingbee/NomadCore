@@ -36,7 +36,7 @@ const lowestPrice = computed(() => {
   >
     <div class="aspect-[4/3] relative overflow-hidden">
       <img
-        :src="property.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop'"
+        :src="property.image || (property.metadata as any)?.images?.[0] || 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop'"
         :alt="property.name"
         class="w-full h-full object-cover transition-transform group-hover:scale-105"
       />

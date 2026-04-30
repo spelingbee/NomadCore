@@ -2,6 +2,7 @@
 import { Clock, Package as PackageIcon } from 'lucide-vue-next'
 import { cn } from '~/lib/utils'
 import { useTourismStore } from '~/stores/useTourismStore'
+import PriceBadge from "../shared/PriceBadge.vue";
 
 interface PackageCardProps {
   pkg: any

@@ -124,3 +124,45 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 }
+
+/* Calendar Range Highlights */
+.reka-calendar-cell[data-selected],
+[data-reka-calendar-cell][data-selected] {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border-radius: 0.5rem !important;
+}
+
+.reka-calendar-cell[data-in-range],
+[data-reka-calendar-cell][data-in-range] {
+  background-color: color-mix(in srgb, var(--primary), transparent 85%) !important;
+  color: var(--primary) !important;
+  border-radius: 0 !important;
+}
+
+.reka-calendar-cell[data-selection-start],
+[data-reka-calendar-cell][data-selection-start] {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border-top-left-radius: 0.5rem !important;
+  border-bottom-left-radius: 0.5rem !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.reka-calendar-cell[data-selection-end],
+[data-reka-calendar-cell][data-selection-end] {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border-top-right-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+[data-disabled], .data-disabled {
+  opacity: 0.2 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  text-decoration: line-through;
+}

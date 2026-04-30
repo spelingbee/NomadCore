@@ -17,8 +17,7 @@ const destination = ref<any>(null)
 onMounted(async () => {
   destination.value = await tourismStore.getPlaceById(destinationId.value)
   await tourismStore.loadProperties({ 
-    touristPlaceId: destinationId.value,
-    destinationId: destinationId.value
+    destinationAreaId: destinationId.value
   })
   
   // Load rate plans (prices)
@@ -69,28 +68,30 @@ function onPropertyClick(id: string) {
     <Button @click="router.push(localePath('/traveler'))" variant="link">{{ t('destination.back_to_home') }}</Button>
   </div>
   <div v-else class="min-h-screen">
-    <!-- Hero -->
-    <div class="relative h-64 lg:h-80">
+    <!-- Hero Section -->
+    <div class="relative h-48 lg:h-60 overflow-hidden">
       <img
-        :src="destination.image || 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&h=600&fit=crop'"
+        :src="destination.image || 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=800&fit=crop'"
         :alt="destination.name"
-        class="w-full h-full object-cover"
+        class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
       />
-      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
       <!-- Back Button -->
       <button
         type="button"
         @click="onBack"
-        class="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/30 backdrop-blur flex items-center justify-center text-white hover:bg-black/40 transition-colors"
+        class="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition-all z-10"
       >
         <ArrowLeft class="w-5 h-5" />
       </button>
 
-      <!-- Title -->
-      <div class="absolute bottom-0 left-0 right-0 p-6">
-        <p class="text-white/80 text-sm">{{ destination.region }}</p>
-        <h1 class="text-white text-3xl font-bold">{{ destination.name }}</h1>
+      <!-- Title Overlay -->
+      <div class="absolute bottom-4 left-4 right-4 lg:bottom-6 lg:left-6">
+        <div class="inline-block px-4 py-2 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10">
+          <p class="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-0.5">{{ destination.region }}</p>
+          <h1 class="text-white text-2xl lg:text-3xl font-black tracking-tight">{{ destination.name }}</h1>
+        </div>
       </div>
     </div>
 

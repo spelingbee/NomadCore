@@ -91,7 +91,7 @@ const stats = computed(() => [
         <template #cell-item="{ item }">
           <div>
             <p class="text-sm font-medium">
-              Rate Plan ID: {{ item.ratePlanId }}
+              {{ item.ratePlanName }}
             </p>
             <p class="text-[10px] text-muted-foreground uppercase tracking-tight font-bold">
               {{ item.guestEmail }}

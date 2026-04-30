@@ -37,6 +37,20 @@ export const useApiService = () => {
     })
   }
 
+  const loginCustomer = async (credentials: any) => {
+    return await request<any>(`/auth/loginCustomer`, {
+      method: 'POST',
+      body: credentials
+    })
+  }
+
+  const registerCustomer = async (userData: any) => {
+    return await request<any>(`/auth/registerCustomer`, {
+      method: 'POST',
+      body: userData
+    })
+  }
+
   const refreshToken = async (token: string) => {
     return await request<any>(`/auth/refresh`, {
       method: 'POST',
@@ -60,7 +74,7 @@ export const useApiService = () => {
   }
 
   // --- Properties ---
-  const fetchProperties = async (params?: { page?: number; size?: number; touristPlaceId?: string }) => {
+  const fetchProperties = async (params?: { page?: number; size?: number; destinationAreaId?: string }) => {
     return await request<any>(`/properties`, {
       params: { page: 0, size: 50, ...params }
     })
@@ -81,6 +95,34 @@ export const useApiService = () => {
     })
   }
 
+  const updateProperty = async (id: string, data: any) => {
+    return await request<Property>(`/properties/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  const uploadPropertyImage = async (propertyId: string, file: File, sortOrder = 0) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('sortOrder', sortOrder.toString())
+    
+    return await request<any>(`/properties/${propertyId}/images`, {
+      method: 'POST',
+      body: formData
+    })
+  }
+
+  const fetchPropertyImages = async (propertyId: string) => {
+    return await request<any[]>(`/properties/${propertyId}/images`)
+  }
+
+  const deletePropertyImage = async (propertyId: string, imageId: string) => {
+    return await request<any>(`/properties/${propertyId}/images/${imageId}`, {
+      method: 'DELETE'
+    })
+  }
+
   // --- Rate Plans / Unit Types ---
   const fetchRatePlans = async (params?: { propertyId?: string }) => {
     return await request<any>(`/rate-plans`, {
@@ -90,6 +132,10 @@ export const useApiService = () => {
 
   const fetchPropertyRatePlans = async (propertyId: string) => {
     return await request<any>(`/properties/${propertyId}/rate-plans`)
+  }
+
+  const fetchUnitTypes = async (propertyId: string) => {
+    return await request<any>(`/properties/${propertyId}/unit-types`)
   }
 
   // --- Bookings ---
@@ -120,7 +166,7 @@ export const useApiService = () => {
   }
 
   // --- Inventory ---
-  const fetchInventory = async (params: { ratePlanId: string; dateFrom: string; dateTo: string }) => {
+  const fetchInventory = async (params: { ratePlanId?: string; propertyId?: string; date?: string; dateFrom?: string; dateTo?: string }) => {
     return await request<any>(`/inventory`, {
       params
     })
@@ -142,13 +188,37 @@ export const useApiService = () => {
     return await request<any>(`/analytics/revenue`)
   }
 
+  // --- Experiences ---
+  const fetchExperiences = async (params?: { partnerId?: string; destinationAreaId?: string }) => {
+    let path = '/experiences'
+    if (params?.partnerId) path = '/experiences/by-partner'
+    else if (params?.destinationAreaId) path = '/experiences/by-area'
+    
+    return await request<any>(path, { params })
+  }
+
+  const createExperience = async (data: any) => {
+    return await request<any>('/experiences', {
+      method: 'POST',
+      body: data
+    })
+  }
+
   return {
     fetchPlaces,
     fetchPlaceById,
+    fetchPlaceProperties,
     fetchProperties,
     fetchMyProperties,
     fetchPropertyById,
     createProperty,
+    updateProperty,
+    uploadPropertyImage,
+    fetchPropertyImages,
+    deletePropertyImage,
+    fetchRatePlans,
+    fetchPropertyRatePlans,
+    fetchUnitTypes,
     fetchBookings,
     createBooking,
     cancelBooking,
@@ -157,8 +227,12 @@ export const useApiService = () => {
     updateInventoryBulk,
     fetchAnalyticsSummary,
     fetchAnalyticsRevenue,
+    fetchExperiences,
+    createExperience,
     login,
     register,
+    loginCustomer,
+    registerCustomer,
     refreshToken
   }
 }

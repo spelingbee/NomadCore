@@ -62,8 +62,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const autoLogin = async () => {
     return await login({
-      email: 'ala-archa@example.com',
-      password: 'secret123'
+      email: 'partner@nomad.kg',
+      password: 'password'
     })
   }
 

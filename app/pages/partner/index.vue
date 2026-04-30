@@ -5,6 +5,8 @@ import {
   DollarSign,
   TrendingUp,
   QrCode,
+  Users,
+  Share2,
 } from 'lucide-vue-next'
 import { Button } from "~/components/ui/button";
 import { useTourismStore } from '~/stores/useTourismStore'
@@ -21,6 +23,8 @@ const tourismStore = useTourismStore()
 const router = useRouter()
 const { t } = useI18n()
 const localePath = useLocalePath()
+
+const analytics = computed(() => tourismStore.analyticsSummary)
 
 onMounted(async () => {
   await Promise.all([
@@ -76,24 +80,24 @@ function navigateToProperty(id: string) {
       <KPIGrid :columns="4">
         <StatCard
           :label="t('dashboard.kpis.total_bookings')"
-          :value="stats.bookings"
-          :change="t('dashboard.kpis.bookings_change')"
+          :value="analytics?.totalBookings || 0"
+          change="+12% from last month"
           change-type="positive"
         >
-          <template #icon><CalendarCheck class="w-5 h-5" /></template>
+          <template #icon><Users class="w-5 h-5" /></template>
         </StatCard>
         <StatCard
           :label="t('dashboard.kpis.revenue')"
-          :value="`${stats.revenue} KGS`"
-          :change="t('dashboard.kpis.revenue_change')"
+          :value="`${analytics?.totalRevenue?.toLocaleString() || 0} KGS`"
+          change="+8% from last month"
           change-type="positive"
         >
           <template #icon><DollarSign class="w-5 h-5" /></template>
         </StatCard>
         <StatCard
           :label="t('dashboard.kpis.occupancy')"
-          :value="stats.occupancy"
-          :change="t('dashboard.kpis.occupancy_change')"
+          :value="(analytics?.avgOccupancyPercent || 0) + '%'"
+          change="+5% from last month"
           change-type="positive"
         >
           <template #icon><TrendingUp class="w-5 h-5" /></template>
@@ -105,6 +109,44 @@ function navigateToProperty(id: string) {
           <template #icon><Building2 class="w-5 h-5" /></template>
         </StatCard>
       </KPIGrid>
+
+      <!-- National Data Simulation Section (The "Wow" factor for Tunduk) -->
+      <div class="bg-primary/5 border border-primary/20 rounded-3xl p-8 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-4">
+          <div class="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+            <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+            ПОТОК ДАННЫХ В РЕАЛЬНОМ ВРЕМЕНИ
+          </div>
+        </div>
+        
+        <div class="relative z-10">
+          <h2 class="text-2xl font-black text-primary flex items-center gap-2">
+            <Share2 class="w-6 h-6" />
+            Интеграция Tunduk Travel
+          </h2>
+          <p class="text-muted-foreground mt-2 max-w-xl">
+            Сбор данных в реальном времени для национального мониторинга туризма. Ваши регистрации автоматически синхронизируются с государственной базой данных туризма.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
+            <div v-for="origin in (analytics?.recentCheckinOrigins || [])" :key="origin.countryCode" class="bg-background/60 backdrop-blur-sm p-4 rounded-2xl border border-primary/10">
+              <p class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Происхождение</p>
+              <div class="flex items-center gap-2 mt-2">
+                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-lg">
+                  {{ origin.flagEmoji }}
+                </div>
+                <div>
+                  <p class="font-bold text-sm">{{ origin.countryName }}</p>
+                  <p class="text-[10px] text-muted-foreground">Заезд {{ origin.timeAgo }}</p>
+                </div>
+              </div>
+            </div>
+            <div v-if="!(analytics?.recentCheckinOrigins?.length)" class="col-span-4 py-8 text-center text-muted-foreground italic">
+              Ожидание первых регистраций...
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Market Insights -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -121,8 +163,8 @@ function navigateToProperty(id: string) {
       </div>
 
       <InsightCard
-        title="AI Pricing Suggestion"
-        insight="Demand for high-altitude properties is increasing. Consider adjusting rates for the upcoming weekend to maximize revenue."
+        title="AI-рекомендация по цене"
+        insight="Спрос на высокогорные объекты растет. Рассмотрите возможность корректировки тарифов на ближайшие выходные для максимизации дохода."
         type="info"
       />
 

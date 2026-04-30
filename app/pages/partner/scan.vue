@@ -3,6 +3,7 @@ import { Html5QrcodeScanner } from 'html5-qrcode'
 import { CheckCircle2, QrCode, RefreshCcw, AlertTriangle } from 'lucide-vue-next'
 import SectionHeader from '~/components/shared/SectionHeader.vue'
 import { Button } from '~/components/ui/button'
+import {useApiService} from "../../services/api.service";
 
 definePageMeta({
   layout: 'partner',

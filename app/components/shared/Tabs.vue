@@ -19,17 +19,17 @@ const activeTab = ref(props.defaultTab || props.tabs[0]?.id)
 
 <template>
   <div :class="className">
-    <div class="border-b border-border">
-      <div class="flex gap-4">
+    <div class="border-b border-border px-4 lg:px-6">
+      <div class="flex gap-6">
         <button
           v-for="tab in tabs"
           :key="tab.id"
           type="button"
           @click="activeTab = tab.id"
           :class="cn(
-            'px-1 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+            'px-1 py-3 text-sm font-semibold border-b-2 -mb-px transition-all duration-200',
             activeTab === tab.id
-              ? 'border-foreground text-foreground'
+              ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           )"
         >
@@ -37,9 +37,8 @@ const activeTab = ref(props.defaultTab || props.tabs[0]?.id)
         </button>
       </div>
     </div>
-    <div class="pt-4">
+    <div class="p-4 lg:p-6">
       <slot :name="activeTab" />
-      <!-- Fallback if no named slot is provided -->
       <slot v-if="!$slots[activeTab]" />
     </div>
   </div>

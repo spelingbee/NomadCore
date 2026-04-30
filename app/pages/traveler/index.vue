@@ -8,9 +8,10 @@ definePageMeta({
 })
 
 const router = useRouter()
-const categories = ['All', 'Yurts', 'Guest Houses', 'Rest Points', 'National Parks', 'Experiences']
-
+const authStore = useAuthStore()
 const tourismStore = useTourismStore()
+
+const categories = ['All', 'Yurts', 'Guest Houses', 'Rest Points', 'National Parks', 'Experiences']
 
 onMounted(async () => {
   await Promise.all([
@@ -18,6 +19,11 @@ onMounted(async () => {
     tourismStore.loadProperties()
   ])
 })
+
+function onLogout() {
+  authStore.logout()
+  router.push('/traveler')
+}
 
 function onDestinationClick(id: string) {
   router.push(`/traveler/destination/${id}`)
@@ -38,6 +44,7 @@ function onSearchClick() {
 
 <template>
   <div class="min-h-screen">
+
     <!-- Hero Section -->
     <div class="relative bg-gradient-to-b from-muted/50 to-background px-4 pt-10 pb-6 lg:pt-16">
       <div class="max-w-2xl mx-auto text-center">
@@ -92,42 +99,6 @@ function onSearchClick() {
         </div>
       </section>
 
-      <!-- Featured Package -->
-      <section>
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold">Popular Packages</h2>
-          <button class="text-sm text-muted-foreground flex items-center gap-1 hover:text-foreground">
-            See all <ChevronRight class="w-4 h-4" />
-          </button>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <TravelerPackageCard
-            v-for="pkg in tourismStore.packages.slice(0, 3)"
-            :key="pkg.id"
-            :pkg="pkg"
-            @click="onPackageClick(pkg.id)"
-          />
-        </div>
-      </section>
-
-      <!-- Recommended Properties -->
-      <section>
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold">Recommended for You</h2>
-          <button class="text-sm text-muted-foreground flex items-center gap-1 hover:text-foreground">
-            See all <ChevronRight class="w-4 h-4" />
-          </button>
-        </div>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <TravelerPropertyCard
-            v-for="prop in tourismStore.properties.slice(0, 4)"
-            :key="prop.id"
-            :property="prop"
-            :unit-types="tourismStore.getUnitTypesByProperty(prop.id)"
-            @click="onPropertyClick(prop.id)"
-          />
-        </div>
-      </section>
 
       <!-- How It Works -->
       <section class="bg-muted rounded-2xl p-6">

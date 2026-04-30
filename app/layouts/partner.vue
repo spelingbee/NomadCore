@@ -5,6 +5,7 @@ import {
   Building2,
   Calendar,
   LayoutDashboard,
+  LogOut,
   Menu,
   Mountain,
   Package,
@@ -18,6 +19,7 @@ import { cn } from '~/lib/utils'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const { t, locales, locale: currentLocale, setLocale } = useI18n()
 const localePath = useLocalePath()
@@ -26,12 +28,7 @@ const navItems = computed(() => [
   { id: 'overview', path: '/partner', label: t('nav.overview'), icon: LayoutDashboard },
   { id: 'scan', path: '/partner/scan', label: t('nav.scan'), icon: QrCode },
   { id: 'properties', path: '/partner/properties/my', label: t('nav.properties'), icon: Building2 },
-  // { id: 'inventory', path: '/partner/inventory', label: t('nav.inventory'), icon: Calendar },
-  // { id: 'packages', path: '/partner/packages', label: t('nav.packages'), icon: Package },
   { id: 'bookings', path: '/partner/bookings', label: t('nav.bookings'), icon: BookOpen },
-  // { id: 'channels', path: '/partner/channels', label: t('nav.channels'), icon: Share2 },
-  { id: 'reviews', path: '/partner/reviews', label: t('nav.reviews'), icon: Star },
-  { id: 'notifications', path: '/partner/notifications', label: t('nav.notifications'), icon: Bell },
 ])
 
 const sidebarOpen = ref(false)
@@ -43,6 +40,11 @@ const activeId = computed(() => {
 
 function onModeChange(mode: string) {
   router.push(`/${mode}`)
+}
+
+function onLogout() {
+  authStore.logout()
+  router.push('/traveler') // Redirect to home/login after logout
 }
 </script>
 
@@ -106,6 +108,14 @@ function onModeChange(mode: string) {
             <component :is="item.icon" class="w-5 h-5" />
             {{ item.label }}
           </NuxtLink>
+
+          <button
+            @click="onLogout"
+            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors mt-auto"
+          >
+            <LogOut class="w-5 h-5" />
+            Logout
+          </button>
         </nav>
       </div>
     </div>
@@ -144,6 +154,16 @@ function onModeChange(mode: string) {
           <component :is="item.icon" class="w-5 h-5" />
           {{ item.label }}
         </NuxtLink>
+
+        <div class="mt-auto pt-2 border-t border-border">
+          <button
+            @click="onLogout"
+            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <LogOut class="w-5 h-5" />
+            Logout
+          </button>
+        </div>
       </nav>
     </aside>
 

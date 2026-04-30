@@ -1,85 +1,82 @@
 <script setup lang="ts">
-import { Bell, ChevronRight, Globe, HelpCircle, LogOut, Mail, Phone, Settings, User } from 'lucide-vue-next'
-import { currentCustomer } from '~/data/mock-data'
-import { Button } from '~/components/ui/button'
+import { User, Mail, Settings, LogOut, ChevronRight, Shield, CreditCard, Bell } from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'traveler',
 })
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+const user = computed(() => authStore.user || {
+  fullName: 'Guest User',
+  email: 'guest@example.com'
+})
+
+function onLogout() {
+  authStore.logout()
+  router.push('/traveler')
+}
+
+const menuItems = [
+  { icon: User, label: 'Personal Information', description: 'Update your name and profile details' },
+  { icon: Shield, label: 'Security', description: 'Manage your password and account security' },
+  { icon: CreditCard, label: 'Payment Methods', description: 'Securely manage your payment options' },
+  { icon: Bell, label: 'Notifications', description: 'Control how we communicate with you' },
+]
 </script>
 
 <template>
-  <div class="min-h-screen pt-4 lg:pt-20 px-4 pb-8 max-w-lg mx-auto">
-    <!-- Profile Header -->
-    <div class="text-center mb-8">
-      <div class="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto">
-        <User class="w-10 h-10 text-muted-foreground" />
+  <div class="max-w-2xl mx-auto py-8 px-4">
+    <div class="flex items-center gap-6 mb-10">
+      <div class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background shadow-xl">
+        <User class="w-12 h-12" />
       </div>
-      <h1 class="text-xl font-bold mt-4">{{ currentCustomer.name }}</h1>
-      <p class="text-sm text-muted-foreground">{{ currentCustomer.email }}</p>
-    </div>
-
-    <!-- Profile Info -->
-    <div class="bg-card border border-border rounded-xl divide-y divide-border">
-      <div class="p-4 flex items-center gap-3">
-        <Mail class="w-5 h-5 text-muted-foreground" />
-        <div class="flex-1">
-          <p class="text-xs text-muted-foreground">Email</p>
-          <p class="text-sm">{{ currentCustomer.email }}</p>
+      <div>
+        <h1 class="text-3xl font-black tracking-tight">{{ user.fullName }}</h1>
+        <div class="flex items-center gap-2 text-muted-foreground mt-1">
+          <Mail class="w-4 h-4" />
+          <span>{{ user.email }}</span>
         </div>
-      </div>
-      <div class="p-4 flex items-center gap-3">
-        <Phone class="w-5 h-5 text-muted-foreground" />
-        <div class="flex-1">
-          <p class="text-xs text-muted-foreground">Phone</p>
-          <p class="text-sm">{{ currentCustomer.phone }}</p>
-        </div>
-      </div>
-      <div class="p-4 flex items-center gap-3">
-        <Globe class="w-5 h-5 text-muted-foreground" />
-        <div class="flex-1">
-          <p class="text-xs text-muted-foreground">Nationality</p>
-          <p class="text-sm">{{ currentCustomer.nationality }}</p>
-        </div>
+        <span class="inline-block mt-3 px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase tracking-wider">
+          Traveler Account
+        </span>
       </div>
     </div>
 
-    <!-- Settings -->
-    <div class="mt-6 bg-card border border-border rounded-xl divide-y divide-border">
-      <button type="button" class="w-full p-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors">
-        <div class="flex items-center gap-3">
-          <Bell class="w-5 h-5 text-muted-foreground" />
-          <span class="text-sm">Notifications</span>
+    <div class="space-y-4">
+      <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+        <Settings class="w-5 h-5 text-primary" />
+        Account Settings
+      </h2>
+      
+      <button 
+        v-for="item in menuItems" 
+        :key="item.label"
+        class="w-full flex items-center justify-between p-4 bg-card border border-border rounded-2xl hover:bg-muted/50 transition-all text-left group"
+      >
+        <div class="flex items-center gap-4">
+          <div class="p-2.5 bg-muted rounded-xl group-hover:bg-background transition-colors">
+            <component :is="item.icon" class="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+          </div>
+          <div>
+            <p class="font-bold text-sm">{{ item.label }}</p>
+            <p class="text-xs text-muted-foreground">{{ item.description }}</p>
+          </div>
         </div>
-        <ChevronRight class="w-5 h-5 text-muted-foreground" />
+        <ChevronRight class="w-5 h-5 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1" />
       </button>
-      <button type="button" class="w-full p-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors">
-        <div class="flex items-center gap-3">
-          <Settings class="w-5 h-5 text-muted-foreground" />
-          <span class="text-sm">Settings</span>
-        </div>
-        <ChevronRight class="w-5 h-5 text-muted-foreground" />
-      </button>
-      <button type="button" class="w-full p-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors">
-        <div class="flex items-center gap-3">
-          <HelpCircle class="w-5 h-5 text-muted-foreground" />
-          <span class="text-sm">Help & Support</span>
-        </div>
-        <ChevronRight class="w-5 h-5 text-muted-foreground" />
-      </button>
-    </div>
 
-    <!-- Logout -->
-    <div class="mt-6">
-      <Button variant="outline" class="w-full" size="lg">
-        <LogOut class="w-4 h-4 mr-2" />
-        Sign Out
-      </Button>
+      <div class="pt-6">
+        <Button 
+          variant="destructive" 
+          class="w-full py-6 rounded-2xl shadow-lg shadow-destructive/10"
+          @click="onLogout"
+        >
+          <LogOut class="mr-2 h-5 w-5" />
+          Logout from Nomad Core
+        </Button>
+      </div>
     </div>
-
-    <!-- Demo Notice -->
-    <p class="text-xs text-muted-foreground text-center mt-8">
-      This is a demo profile. No real authentication is implemented.
-    </p>
   </div>
 </template>
