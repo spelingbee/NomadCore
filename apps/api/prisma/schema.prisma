@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String     @id @default(cuid())
+  phone          String     @unique
+  name           String
+  passwordHash   String?
+  locale         String     @default("ru") // ru | ky
+  telegramChatId String?    @unique // привязка чата владельца (0.2)
+  properties     Property[]
+  createdAt      DateTime   @default(now())
+
+  @@map("users")
+}
+
+model Property {
+  id           String        @id @default(cuid())
+  owner        User          @relation(fields: [ownerId], references: [id])
+  ownerId      String
+  name         String
+  slug         String?       @unique // публичный адрес витрины (маркетплейс/Kataloga)
+  region       String?
+  address      String?
+  timezone     String        @default("Asia/Bishkek")
+  roomTypes    RoomType[]
+  rooms        Room[]
+  bookings     Booking[]
+  guests       Guest[]
+  subscription Subscription?
+  createdAt    DateTime      @default(now())
+
+  @@map("properties")
+}
+
+/// Подписка (Фаза 0.2). Красная линия: базовый учёт и анти-овербукинг —
+/// всегда бесплатны. Pro гейтит только автоматизацию (бот, оплата).
+enum SubscriptionPlan {
+  FREE
+  PRO
+}
+
+model Subscription {
+  id         String           @id @default(cuid())
+  property   Property         @relation(fields: [propertyId], references: [id])
+  propertyId String           @unique
+  plan       SubscriptionPlan @default(FREE)
+  validUntil DateTime?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@map("subscriptions")
+}
+
+model RoomType {
+  id         String   @id @default(cuid())
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+  name       String // "Стандарт 2-местный"
+  capacity   Int      @default(2)
+  basePrice  Decimal  @db.Decimal(10, 2)
+  rooms      Room[]
+
+  @@map("room_types")
+}
+
+model Room {
+  id         String    @id @default(cuid())
+  property   Property  @relation(fields: [propertyId], references: [id])
+  propertyId String
+  roomType   RoomType  @relation(fields: [roomTypeId], references: [id])
+  roomTypeId String
+  label      String // "№101"
+  bookings   Booking[]
+
+  @@unique([propertyId, label])
+  @@map("rooms")
+}
+
+model Guest {
+  id             String    @id @default(cuid())
+  property       Property  @relation(fields: [propertyId], references: [id])
+  propertyId     String
+  name           String
+  phone          String?
+  notes          String?
+  telegramChatId String? // гость, пришедший через бота (0.2)
+  bookings       Booking[]
+
+  @@map("guests")
+}
+
+enum BookingStatus {
+  HOLD
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+model Booking {
+  id         String        @id @default(cuid())
+  property   Property      @relation(fields: [propertyId], references: [id])
+  propertyId String
+  room       Room          @relation(fields: [roomId], references: [id])
+  roomId     String
+  guest      Guest         @relation(fields: [guestId], references: [id])
+  guestId    String
+  checkIn    DateTime      @db.Date
+  checkOut   DateTime      @db.Date
+  status     BookingStatus @default(HOLD)
+  priceTotal Decimal       @db.Decimal(10, 2)
+  source     String        @default("manual") // manual | bot
+  notes      String?
+  version    Int           @default(0) // оптимистичный лок (офлайн-синхронизация)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([roomId, checkIn, checkOut])
+  @@map("bookings")
+}
+
+model OutboxEvent {
+  id            String    @id @default(cuid())
+  aggregateType String
+  aggregateId   String
+  type          String
+  payload       Json
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox_events")
+}

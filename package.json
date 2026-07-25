@@ -1,0 +1,15 @@
+{
+  "name": "nomadcore",
+  "private": true,
+  "version": "0.1.0",
+  "description": "NomadCore — Phase 0.1 'Тетрадка' (PMS-lite for KG guest houses)",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:domain": "node --experimental-strip-types --test apps/api/src/bookings/domain.test.ts"
+  },
+  "packageManager": "pnpm@10.34.3"
+}

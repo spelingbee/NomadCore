@@ -1,0 +1,118 @@
+{
+  "common": {
+    "back": "Back"
+  },
+  "nav": {
+    "today": "Today",
+    "calendar": "Calendar",
+    "guests": "Guests",
+    "more": "More",
+    "rooms": "Rooms"
+  },
+  "sync": {
+    "pending": "Syncing… ({count})",
+    "offline": "Offline",
+    "offlineFull": "Offline — data is saved on your phone",
+    "synced": "Synced"
+  },
+  "login": {
+    "title": "Sign in",
+    "subtitle": "Digital ledger for guest houses",
+    "phone": "Phone",
+    "name": "Name",
+    "sendCode": "Get code",
+    "code": "SMS code",
+    "verify": "Sign in",
+    "changePhone": "Change phone number",
+    "devCodeHint": "Demo mode, code: {code}",
+    "error": "Could not sign in. Check your details."
+  },
+  "today": {
+    "title": "Today",
+    "requests": "Bot requests",
+    "arrivals": "Arrivals",
+    "departures": "Departures",
+    "free": "Free today: {free} of {total}",
+    "emptyArrivals": "No arrivals today",
+    "emptyDepartures": "No departures today",
+    "emptyHint": "Add a booking — tap “+ Booking” or pick a free day in the calendar",
+    "toCalendar": "Open calendar",
+    "checkIn": "Check in",
+    "checkOut": "Check out",
+    "addBooking": "Booking"
+  },
+  "booking": {
+    "guestName": "Guest name",
+    "guestPhone": "Guest phone",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "room": "Room",
+    "nights": "Nights: {n}",
+    "create": "Save booking",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "cancel": "Cancel",
+    "overbooking": "These dates are already taken — double booking is not possible",
+    "status": {
+      "HOLD": "Pending",
+      "CONFIRMED": "Confirmed",
+      "CHECKED_IN": "Checked in",
+      "CHECKED_OUT": "Checked out",
+      "CANCELLED": "Cancelled"
+    }
+  },
+  "calendar": {
+    "title": "Calendar",
+    "newBooking": "New booking",
+    "free": "free",
+    "today": "Today",
+    "hint": "No bookings yet. Tap a free day to add the first one",
+    "legendFree": "Free",
+    "legendHold": "Pending",
+    "legendConfirmed": "Confirmed",
+    "legendCheckedIn": "Checked in"
+  },
+  "rooms": {
+    "title": "Rooms & prices",
+    "types": "Room types",
+    "addType": "Add type",
+    "typeName": "Type name",
+    "typeNamePh": "e.g. Standard double",
+    "capacity": "Beds",
+    "basePrice": "Price per night (KGS)",
+    "list": "Rooms",
+    "addRoom": "Add room",
+    "label": "Room",
+    "labelPh": "e.g. #101",
+    "selectType": "Room type",
+    "emptyTypes": "Add a room type first — the form is below",
+    "emptyRooms": "Now add rooms — the form is below",
+    "save": "Save",
+    "delete": "Delete"
+  },
+  "guests": {
+    "title": "Guests",
+    "search": "Search by name or phone",
+    "empty": "No guests yet — they will appear from bookings",
+    "lastBookings": "Recent bookings"
+  },
+  "settings": {
+    "title": "More",
+    "language": "Language",
+    "property": "Property",
+    "propertyName": "Name",
+    "region": "Region",
+    "save": "Save",
+    "saved": "Saved",
+    "saveError": "Could not save",
+    "slug": "Storefront address (Latin letters)",
+    "slugHint": "Public page for marketplace bookings, e.g. my-guest-house",
+    "slugTaken": "This address is already taken",
+    "slugInvalid": "Address: 2–40 chars, only a–z, 0–9 and hyphen",
+    "roomsLink": "Rooms & prices",
+    "subscription": "Subscription",
+    "planFree": "Free plan — records and anti-overbooking are always free",
+    "planPro": "Pro is active (Telegram bot and notifications)",
+    "logout": "Log out"
+  }
+}
