@@ -15,6 +15,9 @@ export function useSyncState() {
 
 	async function refresh(): Promise<void> {
 		if (!import.meta.client) return
+		// В демо-режиме счётчики ведёт useQueue из фикстур: настоящая
+		// очередь Dexie пуста, и чтение из неё обнулило бы демо.
+		if (useRuntimeConfig().public.demo) return
 		const { db } = await import("~/offline/db")
 		syncPending.value = await db.pendingMutations.count()
 		broken.value = await db.conflicts.count()

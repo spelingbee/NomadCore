@@ -128,6 +128,17 @@ function asServerDate(day: string): string {
 	return `${day}T00:00:00.000Z`
 }
 
+/**
+ * Пометки на бронях согласованы с demoQueue ниже: офлайн-слой обязан быть
+ * виден в четырёх местах сразу — полоса связи, счётчик на вкладке, пометка
+ * на КОНКРЕТНОЙ броне и экран очереди. Без этой связки четвёртая точка
+ * присутствия в демо не показывалась.
+ */
+const DEMO_SYNC: Record<string, Booking["sync"]> = {
+	"booking-1": "pending", // «Подтвердить · Петров Игорь» ждёт отправки
+	"booking-4": "rejected", // «Заселить · Chen Wei» отклонён сервером
+}
+
 export function demoBookings(today: string): Booking[] {
 	return SEED.map(([name, roomLabel, fromOffset, toOffset, status, source], i) => {
 		const room = ROOMS.find((r) => r.label === roomLabel)!
@@ -157,7 +168,7 @@ export function demoBookings(today: string): Booking[] {
 			updatedAt: asServerDate(addDays(today, fromOffset - 7)),
 			guest,
 			room,
-			sync: "ok",
+			sync: DEMO_SYNC[`booking-${i}`] ?? "ok",
 		} satisfies Booking
 	})
 }

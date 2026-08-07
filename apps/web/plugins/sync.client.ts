@@ -11,11 +11,16 @@ export default defineNuxtPlugin(() => {
 	const { flushQueue } = useApi()
 	const { syncPending } = useSession()
 	const { online, refresh } = useSyncState()
+	// В демо-режиме настоящей очереди нет, и Dexie пуст. Без этого гарда
+	// плагин затирал счётчик демо-очереди нулём, и полоса связи писала
+	// «Всё отправлено» поверх двух неотправленных мутаций.
+	const demo = useRuntimeConfig().public.demo
 
 	async function init() {
+		online.value = navigator.onLine
+		if (demo) return
 		const { db } = await import("~/offline/db")
 		syncPending.value = await db.pendingMutations.count()
-		online.value = navigator.onLine
 		await refresh()
 		if (navigator.onLine) {
 			await flushQueue()
@@ -25,6 +30,7 @@ export default defineNuxtPlugin(() => {
 
 	window.addEventListener("online", () => {
 		online.value = true
+		if (demo) return
 		flushQueue().then(refresh)
 	})
 	// Раньше слушателя offline не было вовсе: полоса связи не могла узнать,
