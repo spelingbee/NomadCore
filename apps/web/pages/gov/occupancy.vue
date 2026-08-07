@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RegionRow } from "~/composables/useNationalStats"
 import {
+  DRILLDOWN_REGION,
   GOV_CATEGORIES,
   GOV_COVERAGE,
   GOV_EXPORTED_AT,
@@ -131,6 +132,10 @@ const categoryRows = computed(() =>
 
     <p class="beds nc-tnum">
       {{ t('gov.bedNights', { n: n0(totals.bedNights) }) }}
+    </p>
+
+    <p class="drill">
+      <NuxtLink to="/gov/issyk-kul">{{ t('gov.drilldown', { region: DRILLDOWN_REGION }) }}</NuxtLink>
     </p>
 
     <!-- ── Разрез 2: по категориям классификации ─────────────────────── -->
@@ -329,10 +334,17 @@ const categoryRows = computed(() =>
 
 .beds {
   margin: 0;
-  padding: var(--nc-space-8) var(--nc-space-24) var(--nc-space-16);
+  padding: var(--nc-space-8) var(--nc-space-24) 0;
   font-size: var(--nc-fs-desk-100);
   line-height: var(--nc-lh-desk-200);
   color: var(--nc-text-secondary);
+}
+.drill {
+  margin: 0;
+  padding: var(--nc-space-4) var(--nc-space-24) var(--nc-space-16);
+  font-size: var(--nc-fs-desk-200);
+  line-height: var(--nc-lh-desk-200);
+  font-weight: var(--nc-fw-bold);
 }
 
 .panel {
