@@ -35,6 +35,10 @@ export default defineNuxtConfig({
 	runtimeConfig: {
 		public: {
 			apiBase: process.env.NUXT_PUBLIC_API_BASE ?? "http://localhost:3001/api",
+			// Демо-режим: слой данных берёт fixtures/demo.ts вместо живого API.
+			// Включён по умолчанию, пока рядом нет поднятого бэкенда.
+			// Выключение: NUXT_PUBLIC_DEMO=0
+			demo: process.env.NUXT_PUBLIC_DEMO !== "0",
 		},
 	},
 	i18n: {
