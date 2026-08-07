@@ -28,7 +28,7 @@ const model = defineModel<string>()
   padding: 0 var(--nc-space-12);
   background: var(--nc-bg-surface);
   color: var(--nc-text-primary);
-  border: 2px solid var(--nc-border-strong);
+  border: var(--nc-stroke-control) solid var(--nc-border-strong);
   border-radius: var(--nc-radius-md);
   font-family: var(--nc-font-sans);
   font-size: var(--nc-fs-300);
@@ -40,7 +40,7 @@ const model = defineModel<string>()
   margin-top: var(--nc-space-8);
   padding: var(--nc-space-12);
   background: var(--nc-signal-error-bg);
-  border-left: 4px solid var(--nc-action-danger-fg);
+  border-left: var(--nc-stroke-accent) solid var(--nc-action-danger-fg);
   color: var(--nc-signal-error-fg);
   font-size: var(--nc-fs-200);
   line-height: var(--nc-lh-200);

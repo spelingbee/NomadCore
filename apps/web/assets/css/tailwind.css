@@ -1,0 +1,6 @@
+/* Подключается ПОСЛЕ design-system/tokens.css: утилиты перекрывают базу,
+   а не наоборот. Своих правил здесь нет — сбросы и базовая типографика
+   живут в tokens.css, это единственный источник правды. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

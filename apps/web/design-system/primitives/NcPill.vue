@@ -27,7 +27,7 @@ defineProps<{ status?: BookingStatus; tone?: 'neutral' | 'warning' | 'error' | '
 .nc-pill--checked_out { background: var(--nc-status-out);       color: var(--nc-status-out-fg); }
 .nc-pill--cancelled   { background: var(--nc-status-cancelled); color: var(--nc-status-fg); }
 .nc-pill--neutral     { background: var(--nc-bg-band);          color: var(--nc-text-primary); }
-.nc-pill--outline     { background: transparent; color: var(--nc-text-primary); box-shadow: inset 0 0 0 2px var(--nc-border-strong); }
+.nc-pill--outline     { background: transparent; color: var(--nc-text-primary); box-shadow: inset 0 0 0 var(--nc-stroke-control) var(--nc-border-strong); }
 .nc-pill--warning     { background: var(--nc-signal-warning-bg); color: var(--nc-signal-warning-fg); }
 .nc-pill--error       { background: var(--nc-signal-error-bg);   color: var(--nc-signal-error-fg); }
 </style>

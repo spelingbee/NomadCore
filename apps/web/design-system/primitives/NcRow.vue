@@ -26,11 +26,11 @@ defineProps<{ marker?: string; interactive?: boolean }>()
   gap: var(--nc-space-12);
   padding: var(--nc-space-12);
   background: var(--nc-bg-surface);
-  border-bottom: 1px solid var(--nc-border-line);
+  border-bottom: var(--nc-stroke-hair) solid var(--nc-border-line);
   position: relative;
 }
 .nc-row--interactive { cursor: pointer; }
-.nc-row__marker { position: absolute; inset: 0 auto 0 0; width: 4px; }
+.nc-row__marker { position: absolute; inset: 0 auto 0 0; width: var(--nc-stroke-accent); }
 .nc-row__body { flex: 1; min-width: 0; }
 .nc-row__head { display: flex; align-items: center; gap: var(--nc-space-8); flex-wrap: wrap; }
 /* Перенос между смысловыми узлами, а не внутри них */

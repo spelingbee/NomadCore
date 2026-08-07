@@ -26,7 +26,7 @@ const model = defineModel<string>({ required: true })
   flex: 1;
   min-height: var(--nc-touch-min);
   padding: 0 var(--nc-space-8);
-  border: 2px solid var(--nc-border-strong);
+  border: var(--nc-stroke-control) solid var(--nc-border-strong);
   border-left-width: 0;
   background: var(--nc-bg-surface);
   color: var(--nc-text-primary);
@@ -35,12 +35,12 @@ const model = defineModel<string>({ required: true })
   font-weight: var(--nc-fw-regular);
   cursor: pointer;
 }
-.nc-seg__item:first-child { border-left-width: 2px; border-radius: var(--nc-radius-md) 0 0 var(--nc-radius-md); }
+.nc-seg__item:first-child { border-left-width: var(--nc-stroke-control); border-radius: var(--nc-radius-md) 0 0 var(--nc-radius-md); }
 .nc-seg__item:last-child { border-radius: 0 var(--nc-radius-md) var(--nc-radius-md) 0; }
 .nc-seg__item--on {
   background: var(--nc-bg-band);
   color: var(--nc-text-primary);
   font-weight: var(--nc-fw-bold);
-  border-bottom-width: 4px;
+  border-bottom-width: var(--nc-stroke-accent);
 }
 </style>

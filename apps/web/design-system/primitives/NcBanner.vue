@@ -15,7 +15,7 @@ defineProps<{ tone: 'warning' | 'error' | 'offline' | 'neutral' }>()
   display: flex; align-items: flex-start; gap: var(--nc-space-12);
   padding: var(--nc-space-12);
   font-size: var(--nc-fs-200); line-height: var(--nc-lh-200);
-  border-left: 4px solid transparent;
+  border-left: var(--nc-stroke-accent) solid transparent;
 }
 .nc-banner__body { flex: 1; min-width: 0; }
 .nc-banner__actions { flex: none; display: flex; gap: var(--nc-space-8); }

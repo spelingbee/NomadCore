@@ -17,10 +17,10 @@ const emit = defineEmits<{ close: [] }>()
 
 <style scoped>
 .nc-sheet { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; justify-content: flex-end; }
-.nc-sheet__scrim { flex: 1; border: 0; background: rgba(17, 19, 16, .5); cursor: pointer; }
+.nc-sheet__scrim { flex: 1; border: 0; background: var(--nc-scrim); cursor: pointer; }
 .nc-sheet__panel {
   background: var(--nc-bg-surface);
-  border-top: 3px solid var(--nc-border-strong);
+  border-top: var(--nc-stroke-accent) solid var(--nc-border-strong);
   box-shadow: var(--nc-shadow-sheet);
   padding: var(--nc-space-16) var(--nc-space-12);
 }

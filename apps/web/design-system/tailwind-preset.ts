@@ -55,4 +55,13 @@ export const ncPreset: Partial<Config> = {
     }
   }
 }
-export default ncPreset
+
+/* Экспорт по умолчанию НАМЕРЕННО убран.
+   Раньше здесь стояло `export default ncPreset` — тот же самый объект и
+   именованным экспортом, и по умолчанию. Интероп CJS/ESM (jiti, через который
+   @nuxtjs/tailwindcss читает конфиг) в этом случае дописывает именованные
+   экспорты в объект default, а поскольку это один объект, получается
+   ncPreset.ncPreset === ncPreset. Глубокое слияние пресетов в Tailwind уходит
+   по этой петле в бесконечную рекурсию и сборка падает с
+   «RangeError: Maximum call stack size exceeded» в vite:css.
+   Подключение — только именованным импортом, как и написано в README. */

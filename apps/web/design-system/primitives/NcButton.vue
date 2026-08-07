@@ -41,11 +41,11 @@ withDefaults(defineProps<{
   justify-content: center;
   gap: var(--nc-space-8);
   padding: 0 var(--nc-space-12);
-  border: 2px solid transparent;
+  border: var(--nc-stroke-control) solid transparent;
   border-radius: var(--nc-radius-md);
   font-family: var(--nc-font-sans);
   font-weight: var(--nc-fw-bold);
-  line-height: 1.15;
+  line-height: var(--nc-lh-tight);
   text-align: center;
   cursor: pointer;
   transition: background-color var(--nc-motion-state) var(--nc-ease);
@@ -55,7 +55,7 @@ withDefaults(defineProps<{
 
 /* Размеры: нижняя граница 44px — предел, а не рекомендация */
 .nc-btn--size-sm { min-height: var(--nc-touch-min);     min-width: var(--nc-touch-min); font-size: var(--nc-fs-200); }
-.nc-btn--size-md { min-height: var(--nc-touch-action);  min-width: 114px;               font-size: var(--nc-fs-300); }
+.nc-btn--size-md { min-height: var(--nc-touch-action);  min-width: var(--nc-btn-min-w);  font-size: var(--nc-fs-300); }
 .nc-btn--size-lg { min-height: var(--nc-touch-primary); font-size: var(--nc-fs-400); border-radius: var(--nc-radius-lg); }
 
 /* Роли */

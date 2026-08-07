@@ -15,7 +15,7 @@ const model = defineModel<number>({ required: true })
 .nc-stepper {
   display: flex; align-items: center;
   height: var(--nc-touch-action);
-  border: 2px solid var(--nc-border-strong);
+  border: var(--nc-stroke-control) solid var(--nc-border-strong);
   border-radius: var(--nc-radius-md);
   background: var(--nc-bg-surface);
   overflow: hidden;

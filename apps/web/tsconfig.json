@@ -1,0 +1,12 @@
+{
+	// Раньше этого файла не было вовсе, и `nuxt typecheck` падал с
+	// «Cannot find matching tsconfig.json» — то есть команда из CI
+	// для apps/web не отрабатывала ни разу.
+	"extends": "./.nuxt/tsconfig.json",
+	"compilerOptions": {
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+		"noFallthroughCasesInSwitch": true
+	}
+}

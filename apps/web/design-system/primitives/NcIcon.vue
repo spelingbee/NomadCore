@@ -22,10 +22,12 @@ withDefaults(defineProps<{ name: keyof typeof PATHS; size?: number }>(), { size:
 
 <template>
   <svg :width="size" :height="size" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="nc-icon">
-    <path :d="PATHS[name]" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+    <path :d="PATHS[name]" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
   </svg>
 </template>
 
 <style scoped>
 .nc-icon { display: block; flex: none; }
+/* stroke-width задан стилем, а не атрибутом: атрибут SVG не читает var() */
+.nc-icon path { stroke-width: var(--nc-icon-stroke); }
 </style>
