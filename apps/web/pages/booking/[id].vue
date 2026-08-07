@@ -25,6 +25,9 @@ import { formatMoney } from "~/utils/money"
  */
 const route = useRoute()
 const { t } = useI18n()
+/* Заблокированные API блоки показываются только при разборе. По умолчанию
+   их нет вовсе: экран, который ничего не может, ничего и не обещает. */
+const showGaps = useRuntimeConfig().public.showApiGaps
 const { dateRange } = useDateText()
 const { byId, changeStatus } = useBookings()
 
@@ -123,24 +126,28 @@ async function doCancel() {
         </li>
       </ol>
 
-      <!-- Блок на месте, но нерабочий: признака документа в схеме нет -->
-      <div class="docs">
-        <div class="docs__text">
-          <p class="docs__label">{{ t('card.documents') }}</p>
-          <p class="docs__value">{{ t('card.documentsUnknown') }}</p>
+      <!-- Признака документа в схеме нет: блок виден только при разборе -->
+      <template v-if="showGaps">
+        <div class="docs">
+          <div class="docs__text">
+            <p class="docs__label">{{ t('card.documents') }}</p>
+            <p class="docs__value">{{ t('card.documentsUnknown') }}</p>
+          </div>
+          <NcButton variant="secondary" size="sm" disabled>{{ t('card.mark') }}</NcButton>
         </div>
-        <NcButton variant="secondary" size="sm" disabled>{{ t('card.mark') }}</NcButton>
-      </div>
-      <p class="blocked">{{ t('card.blockedDocuments') }}</p>
+        <p class="blocked">{{ t('card.blockedDocuments') }}</p>
+      </template>
 
       <div class="actions">
-        <NcButton variant="secondary" size="md" align="start" block disabled>
-          {{ t('card.extend') }}
-        </NcButton>
-        <NcButton variant="secondary" size="md" align="start" block disabled>
-          {{ t('card.earlyCheckout') }}
-        </NcButton>
-        <p class="blocked">{{ t('card.blockedDates') }}</p>
+        <template v-if="showGaps">
+          <NcButton variant="secondary" size="md" align="start" block disabled>
+            {{ t('card.extend') }}
+          </NcButton>
+          <NcButton variant="secondary" size="md" align="start" block disabled>
+            {{ t('card.earlyCheckout') }}
+          </NcButton>
+          <p class="blocked">{{ t('card.blockedDates') }}</p>
+        </template>
 
         <NcButton
           v-if="booking.status === 'CHECKED_IN'"

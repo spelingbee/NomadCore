@@ -22,6 +22,7 @@ const { t } = useI18n()
 const { items, broken, load, retry, discard } = useQueue()
 const { online, pending } = useSyncState()
 const { flushQueue } = useApi()
+const showGaps = useRuntimeConfig().public.showApiGaps
 
 await load()
 
@@ -110,7 +111,9 @@ async function sendNow() {
           {{ t('queue.retry') }}
         </NcButton>
       </div>
-      <p v-if="item.state === 'rejected'" class="blocked">{{ t('queue.blockedOtherRoom') }}</p>
+      <p v-if="showGaps && item.state === 'rejected'" class="blocked">
+        {{ t('queue.blockedOtherRoom') }}
+      </p>
     </article>
   </main>
 

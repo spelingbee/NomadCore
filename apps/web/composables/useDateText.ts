@@ -17,10 +17,19 @@ export function useDateText() {
 		return item ? rt(item as never) : ""
 	}
 
-	/** «7 авг» */
+	/**
+	 * «7 авг» по-русски, «7-авг» по-кыргызски.
+	 *
+	 * Порядок и разделитель заданы ШАБЛОНОМ в словаре, а не склейкой в коде:
+	 * в кыргызском число пишется с порядковым дефисом («7-август»), и
+	 * зашитый пробел выдавал бы русскую форму на кыргызском экране.
+	 */
 	function shortDate(value: string): string {
 		const day = toDay(value)
-		return `${dayNumber(day)} ${fromList("common.monthsShort", monthIndex(day))}`
+		return t("common.datePattern.short", {
+			d: dayNumber(day),
+			m: fromList("common.monthsShort", monthIndex(day)),
+		})
 	}
 
 	/** «7 авг → 9 авг». Стрелка читается как полуинтервал: выехал — освободил. */
@@ -28,12 +37,14 @@ export function useDateText() {
 		return `${shortDate(from)} → ${shortDate(to)}`
 	}
 
-	/** «Пятница, 7 августа» */
+	/** «Пятница, 7 августа» по-русски, «Жума, 7-август» по-кыргызски. */
 	function longDay(value: string): string {
 		const day = toDay(value)
-		const weekday = fromList("common.weekdays", dayOfWeek(day))
-		const month = fromList("common.monthsGenitive", monthIndex(day))
-		return `${weekday}, ${dayNumber(day)} ${month}`
+		return t("common.datePattern.long", {
+			d: dayNumber(day),
+			m: fromList("common.monthsLong", monthIndex(day)),
+			w: fromList("common.weekdays", dayOfWeek(day)),
+		})
 	}
 
 	/** «Пт» */
