@@ -41,7 +41,7 @@ const trackWidth = computed(() => `${columns.value.length * cell}px`)
 <template>
   <div>
     <div class="scroll">
-      <div class="track" :style="{ width: `calc(var(--nc-space-48) + ${trackWidth})` }">
+      <div class="track" :style="{ width: `calc(var(--nc-grid-label-w) + ${trackWidth})` }">
         <div class="head">
           <div class="head__corner" />
           <div
@@ -111,7 +111,7 @@ const trackWidth = computed(() => `${columns.value.length * cell}px`)
   left: 0;
   z-index: 2;
   flex: none;
-  width: var(--nc-space-48);
+  width: var(--nc-grid-label-w);
   background: var(--nc-bg-surface);
   border-right: var(--nc-stroke-control) solid var(--nc-border-strong);
 }
@@ -136,13 +136,18 @@ const trackWidth = computed(() => `${columns.value.length * cell}px`)
   flex: none;
   display: flex;
   align-items: center;
-  width: var(--nc-space-48);
+  width: var(--nc-grid-label-w);
   padding-left: var(--nc-space-8);
   background: var(--nc-bg-surface);
   border-right: var(--nc-stroke-control) solid var(--nc-border-strong);
   font-size: var(--nc-fs-200);
   line-height: var(--nc-lh-200);
   font-weight: var(--nc-fw-bold);
+  /* Страховка на случай ярлыка длиннее расчётного: обрезаем многоточием,
+     а не выпускаем поверх сетки */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .row__track { position: relative; flex: 1; }
 .cellbg {
