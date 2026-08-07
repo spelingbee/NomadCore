@@ -103,6 +103,27 @@ export type Booking = {
 	sync?: SyncState
 }
 
+/**
+ * Строка очереди мутаций в том виде, в каком её показывает интерфейс.
+ * Живёт здесь, а не в useQueue, чтобы модуль фикстур мог её импортировать
+ * без кольцевой зависимости.
+ */
+export type QueueItem = {
+	id: number
+	state: "pending" | "conflict" | "rejected"
+	/** «Подтвердить · Петров Игорь» */
+	title: string
+	/** «Номер 2» */
+	subtitle: string
+	bookingId?: string
+	error?: string
+	/** Значение на телефоне и на сервере — только когда сервер их прислал. */
+	mine?: string
+	theirs?: string
+	changedBy?: string
+	changedAt?: string
+}
+
 /** Ячейка ответа GET /availability. Ответ РАЗРЕЖЁН: свободных дней в нём нет. */
 export type AvailabilityCell = {
 	date: string

@@ -5,7 +5,7 @@
  * Записи: при офлайне кладутся в очередь outbox (IndexedDB) и проигрываются
  * при появлении сети (last-write-wins + проверка version на сервере).
  */
-import { db, type PendingMutation } from "~/offline/db"
+import { bookingIdFromPath, db, type PendingMutation } from "~/offline/db"
 
 export function useApi() {
 	const config = useRuntimeConfig()
@@ -55,7 +55,18 @@ export function useApi() {
 
 	async function flushQueue(): Promise<void> {
 		const pending = await db.pendingMutations.orderBy("createdAt").toArray()
+		/* Брони с нерешённой мутацией. Блокируется только СВОЯ бронь —
+		   иначе один спорный гость останавливает весь дом. */
+		const blocked = new Set<string>()
+
 		for (const mutation of pending) {
+			// Решения владельца ждут молча: сами не отправляются никогда.
+			if (mutation.state === "conflict" || mutation.state === "rejected") {
+				if (mutation.bookingId) blocked.add(mutation.bookingId)
+				continue
+			}
+			if (mutation.bookingId && blocked.has(mutation.bookingId)) continue
+
 			try {
 				await $fetch(`${config.public.apiBase}${mutation.path}`, {
 					method: mutation.method,
@@ -67,8 +78,36 @@ export function useApi() {
 				await db.pendingMutations.delete(mutation.id!)
 			} catch (error) {
 				if (isOffline(error)) break // сеть снова пропала — повторим позже
-				// Конфликт (409 OVERBOOKING и т.п.): отбрасываем мутацию,
-				// помечаем для ручного разбора владельцем.
+
+				/* Раскладка по РЕАЛЬНОМУ контракту, а не по ожидаемому.
+				   Сегодня 409 у этого API означает бизнес-отказ
+				   ({code:"OVERBOOKING"}, {code:"INVALID_TRANSITION"}),
+				   а конфликт версий приходит пятисоткой и здесь неотличим.
+				   Ветка с телом booking — задел: она оживёт без правок
+				   клиента, когда API начнёт отдавать тело 409.
+				   Обоснование и постановка: nuxt/API-CONFLICTS.md */
+				const status = httpStatus(error)
+				const data = httpData(error)
+
+				if (status === 409 && data?.booking) {
+					await db.pendingMutations.update(mutation.id!, {
+						state: "conflict",
+						server: data,
+					})
+					if (mutation.bookingId) blocked.add(mutation.bookingId)
+					continue
+				}
+				if (status === 409 || status === 422 || status === 423) {
+					await db.pendingMutations.update(mutation.id!, {
+						state: "rejected",
+						error: data?.code ?? data?.message ?? String(status),
+					})
+					if (mutation.bookingId) blocked.add(mutation.bookingId)
+					continue
+				}
+
+				// Всё остальное — прежнее поведение, байт в байт:
+				// отбрасываем мутацию, помечаем для ручного разбора владельцем.
 				await db.conflicts.add({
 					mutation: JSON.stringify(mutation),
 					reason: String((error as Error).message ?? error),
@@ -80,13 +119,60 @@ export function useApi() {
 		syncPending.value = await db.pendingMutations.count()
 	}
 
+	/** Владелец выбрал «Оставить моё»: отправляем заново на свежей версии. */
+	async function retryMutation(id: number): Promise<void> {
+		const m = await db.pendingMutations.get(id)
+		if (!m) return
+		await db.pendingMutations.update(id, {
+			state: "pending",
+			error: undefined,
+			server: undefined,
+			baseVersion: versionOf(m.server) ?? m.baseVersion,
+		})
+		syncPending.value = await db.pendingMutations.count()
+		await flushQueue()
+	}
+
+	/** Владелец выбрал «Отклонить»: мутация удаляется, пометка снимается. */
+	async function discardMutation(id: number): Promise<void> {
+		await db.pendingMutations.delete(id)
+		syncPending.value = await db.pendingMutations.count()
+	}
+
 	async function enqueueMutation(
 		mutation: Omit<PendingMutation, "id" | "createdAt">,
 	) {
-		await db.pendingMutations.add({ ...mutation, createdAt: Date.now() })
+		await db.pendingMutations.add({
+			...mutation,
+			createdAt: Date.now(),
+			// Добавлено в версии 2: без bookingId очередь не умеет блокировать
+			// одну бронь и блокировала бы либо всё, либо ничего.
+			bookingId: mutation.bookingId ?? bookingIdFromPath(mutation.path),
+			state: "pending",
+			attempts: 0,
+		})
 	}
 
-	return { request, flushQueue }
+	return { request, flushQueue, retryMutation, discardMutation }
+}
+
+/** ofetch кладёт код в status или statusCode — читаем оба. */
+function httpStatus(error: unknown): number | undefined {
+	const e = error as { status?: number; statusCode?: number } | null
+	return e?.status ?? e?.statusCode
+}
+
+function httpData(
+	error: unknown,
+): { booking?: unknown; code?: string; message?: string } | undefined {
+	return (error as { data?: { booking?: unknown; code?: string; message?: string } } | null)
+		?.data
+}
+
+function versionOf(server: unknown): number | undefined {
+	const v = (server as { booking?: { version?: number } } | undefined)?.booking
+		?.version
+	return typeof v === "number" ? v : undefined
 }
 
 function cacheKey(

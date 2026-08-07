@@ -30,6 +30,7 @@ import type {
 	BookingStatus,
 	Guest,
 	Property,
+	QueueItem,
 	Room,
 	RoomType,
 } from "~/types"
@@ -159,4 +160,40 @@ export function demoBookings(today: string): Booking[] {
 			sync: "ok",
 		} satisfies Booking
 	})
+}
+
+/**
+ * Демо-очередь: две строки, чтобы экран «Очередь» было на чём смотреть.
+ *
+ * Третьего состояния — `conflict` — здесь НЕТ намеренно. Конфликт версий
+ * требует, чтобы сервер вернул 409 с телом (обе версии, автор и время);
+ * сегодняшний API отдаёт на этот случай 500, отличить его не от чего.
+ * Показать конфликт в демо означало бы пообещать сценарий, которого в
+ * продукте нет. Разбор — docs/WEB-API-GAPS.md и nuxt/API-CONFLICTS.md.
+ */
+export function demoQueue(
+	t: (key: string, named?: Record<string, unknown>) => string,
+	byId: (id: string) => Booking | null,
+): QueueItem[] {
+	const label = (bookingId: string) => byId(bookingId)?.room?.label ?? ""
+	const guest = (bookingId: string) => byId(bookingId)?.guest?.name ?? ""
+
+	return [
+		{
+			id: 1,
+			state: "pending",
+			title: `${t("booking.confirm")} · ${guest("booking-1")}`,
+			subtitle: `${t("card.room")} ${label("booking-1")}`,
+			bookingId: "booking-1",
+		},
+		{
+			id: 2,
+			state: "rejected",
+			title: `${t("booking.checkIn")} · ${guest("booking-4")}`,
+			subtitle: `${t("card.room")} ${label("booking-4")}`,
+			bookingId: "booking-4",
+			// Ровно то, что кладёт сервер: {code:"OVERBOOKING"}
+			error: "OVERBOOKING",
+		},
+	]
 }

@@ -10,9 +10,13 @@
  */
 const { load: loadProperty } = useProperty()
 const { load: loadBookings } = useBookings()
+const { load: loadQueue } = useQueue()
 
 await loadProperty()
 await loadBookings()
+// Очередь грузится в оболочке, а не на своём экране: её счётчик стоит
+// в полосе связи и на вкладке, то есть виден со всех четырёх экранов.
+await loadQueue()
 </script>
 
 <template>
