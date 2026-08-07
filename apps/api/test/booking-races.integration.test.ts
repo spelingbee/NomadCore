@@ -19,8 +19,14 @@ describe("анти-овербукинг под конкуренцией", { skip
 
 	before(async () => {
 		const { PrismaClient } = await import("@prisma/client")
-		const { BookingsService } = await import("../src/bookings/bookings.service")
-		const { OutboxService } = await import("../src/outbox/outbox.service")
+		// Расширение .ts обязательно: файл запускается напрямую через
+		// node --experimental-strip-types, а ESM-резолвер Node не достраивает
+		// расширения. Без него тест падал с ERR_MODULE_NOT_FOUND ещё до
+		// подключения к базе — то есть инвариант ADR-1 не проверялся ни разу.
+		const { BookingsService } = await import(
+			"../src/bookings/bookings.service.ts"
+		)
+		const { OutboxService } = await import("../src/outbox/outbox.service.ts")
 
 		prisma = new PrismaClient()
 		service = new BookingsService(prisma, new OutboxService())
@@ -80,13 +86,23 @@ describe("анти-овербукинг под конкуренцией", { skip
 	})
 
 	it("back-to-back брони проходят (выезд = заезд)", async () => {
+		// Предыдущий тест занял этот же номер на 01–05.09. Здесь заезд ровно
+		// в день выезда: интервал полуоткрытый, [checkIn, checkOut), поэтому
+		// пересечения нет и создание обязано пройти. Сам факт отсутствия
+		// исключения и есть проверка.
 		const b = await service.create(ownerId, {
 			roomId,
 			checkIn: "2026-09-05",
 			checkOut: "2026-09-08",
 			guestName: "Гость В",
 		})
-		assert.equal(b.status, "HOLD")
+		// CONFIRMED, а не HOLD: владелец заводит бронь уже подтверждённой
+		// (bookings.service.ts, create → status: "CONFIRMED").
+		// HOLD приходит только из Telegram-бота и с публичной витрины —
+		// его владелец подтверждает вручную. Прежнее ожидание HOLD было
+		// списано со значения по умолчанию в схеме и устарело.
+		assert.equal(b.status, "CONFIRMED")
+		assert.equal(b.checkIn.toISOString().slice(0, 10), "2026-09-05")
 	})
 })
 
