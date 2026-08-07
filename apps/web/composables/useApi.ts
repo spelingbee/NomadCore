@@ -5,7 +5,29 @@
  * Записи: при офлайне кладутся в очередь outbox (IndexedDB) и проигрываются
  * при появлении сети (last-write-wins + проверка version на сервере).
  */
-import { bookingIdFromPath, db, type PendingMutation } from "~/offline/db"
+import type { PendingMutation } from "~/offline/db"
+
+/**
+ * Dexie грузится ЛЕНИВО и один раз.
+ *
+ * Раньше `~/offline/db` импортировался статически, и Dexie (~29 КБ gzip)
+ * попадал во входной чанк, то есть в первую загрузку владельца на дешёвом
+ * Android — при том что до первого чтения кэша или первой мутации он не
+ * нужен. Это же предписывает nuxt/README.md.
+ *
+ * Поведение не меняется: все обращения к базе и так живут внутри async-
+ * функций, добавляется только ожидание уже начатого импорта. Модуль
+ * запоминается в промисе, поэтому чанк запрашивается ровно один раз.
+ *
+ * Офлайн это не ломает: service worker прекэширует всю статику
+ * (globPatterns в nuxt.config), и после первой успешной загрузки чанк
+ * доступен без сети.
+ */
+let offlineModule: Promise<typeof import("~/offline/db")> | null = null
+function offline(): Promise<typeof import("~/offline/db")> {
+	offlineModule ??= import("~/offline/db")
+	return offlineModule
+}
 
 export function useApi() {
 	const config = useRuntimeConfig()
@@ -30,6 +52,7 @@ export function useApi() {
 					: {},
 			})
 			if (method === "GET") {
+				const { db } = await offline()
 				await db.cachedReads.put({
 					key: cacheKey(path, opts.query),
 					payload: JSON.stringify(result),
@@ -39,6 +62,7 @@ export function useApi() {
 			return result
 		} catch (error) {
 			if (isOffline(error)) {
+				const { db } = await offline()
 				if (method === "GET") {
 					const cached = await db.cachedReads.get(cacheKey(path, opts.query))
 					if (cached) return JSON.parse(cached.payload) as T
@@ -54,6 +78,7 @@ export function useApi() {
 	}
 
 	async function flushQueue(): Promise<void> {
+		const { db } = await offline()
 		const pending = await db.pendingMutations.orderBy("createdAt").toArray()
 		/* Брони с нерешённой мутацией. Блокируется только СВОЯ бронь —
 		   иначе один спорный гость останавливает весь дом. */
@@ -121,6 +146,7 @@ export function useApi() {
 
 	/** Владелец выбрал «Оставить моё»: отправляем заново на свежей версии. */
 	async function retryMutation(id: number): Promise<void> {
+		const { db } = await offline()
 		const m = await db.pendingMutations.get(id)
 		if (!m) return
 		await db.pendingMutations.update(id, {
@@ -135,6 +161,7 @@ export function useApi() {
 
 	/** Владелец выбрал «Отклонить»: мутация удаляется, пометка снимается. */
 	async function discardMutation(id: number): Promise<void> {
+		const { db } = await offline()
 		await db.pendingMutations.delete(id)
 		syncPending.value = await db.pendingMutations.count()
 	}
@@ -142,6 +169,7 @@ export function useApi() {
 	async function enqueueMutation(
 		mutation: Omit<PendingMutation, "id" | "createdAt">,
 	) {
+		const { db, bookingIdFromPath } = await offline()
 		await db.pendingMutations.add({
 			...mutation,
 			createdAt: Date.now(),
