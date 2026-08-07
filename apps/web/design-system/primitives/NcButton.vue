@@ -77,9 +77,12 @@ withDefaults(defineProps<{
   color: var(--nc-text-secondary);
   border-color: var(--nc-text-tertiary);
 }
+/* Текст и граница берут РАЗНЫЕ токены: у подписи порог 7:1, у границы 3:1,
+   и одним значением их не закрыть — красный, проходящий как граница,
+   как текст не проходит. */
 .nc-btn--danger {
   background: var(--nc-action-secondary-bg);
-  color: var(--nc-action-danger-fg);
+  color: var(--nc-action-danger-text);
   border-color: var(--nc-action-danger-fg);
 }
 .nc-btn--quiet {

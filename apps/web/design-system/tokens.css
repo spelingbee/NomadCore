@@ -116,7 +116,16 @@
   --nc-action-secondary-bg: #FFFFFF;
   --nc-action-secondary-fg: #111310;
   --nc-action-secondary-bd: #111310;
-  --nc-action-danger-fg:    #B03024;  /* 6.4:1 */
+  /* ГРАНИЦА и акцент необратимого действия. 6,37:1 на surface, 4,86:1 на
+     худшем фоне светлой темы (band) — для границы достаточно (порог 3:1),
+     для ТЕКСТА нет. Текст берёт токен ниже. */
+  --nc-action-danger-fg:    #B03024;
+  /* ТЕКСТ необратимого действия. Отдельный токен, потому что у границы и у
+     подписи разные пороги: 3:1 против 7:1. Значение задано ссылкой, а не
+     копией числа: красный текст в системе один, и разъезжаться этим двум
+     ролям незачем — но теперь они МОГУТ разойтись, не ломая друг друга.
+     Замер: 10,37 surface · 8,84 canvas · 9,58 sunken · 7,90 band. */
+  --nc-action-danger-text:  var(--nc-signal-error-fg);
   --nc-action-disabled-bg:  #DDDDD7;
   --nc-action-disabled-fg:  #6B6D68;
 
@@ -177,7 +186,9 @@
   --nc-action-secondary-bg: transparent;
   --nc-action-secondary-fg: #F2F3F0;
   --nc-action-secondary-bd: #7E837D;
-  --nc-action-danger-fg:    oklch(0.72 0.15 25);  /* 6.9:1 */
+  --nc-action-danger-fg:    oklch(0.72 0.15 25);  /* граница, порог 3:1 */
+  /* Замер: 10,41 surface · 10,97 canvas · 9,57 sunken · 8,79 band */
+  --nc-action-danger-text:  var(--nc-signal-error-fg);
   --nc-action-disabled-bg:  #26292C;
   --nc-action-disabled-fg:  #7E837D;
 
@@ -214,6 +225,7 @@
     --nc-action-primary-bg: #F2F3F0; --nc-action-primary-fg: #101214;
     --nc-action-secondary-bg: transparent; --nc-action-secondary-fg: #F2F3F0; --nc-action-secondary-bd: #7E837D;
     --nc-action-danger-fg: oklch(0.72 0.15 25);
+    --nc-action-danger-text: var(--nc-signal-error-fg);
     --nc-action-disabled-bg: #26292C; --nc-action-disabled-fg: #7E837D;
     --nc-status-hold: oklch(0.76 0.13 70); --nc-status-confirmed: oklch(0.72 0.12 255);
     --nc-status-inhouse: oklch(0.72 0.13 155); --nc-status-out: #33383B; --nc-status-cancelled: oklch(0.70 0.16 25);
