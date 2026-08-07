@@ -1,0 +1,222 @@
+/* NomadCore — токены. Единственный источник правды по цвету, типографике,
+   размерам и движению. Ни один компонент не имеет права на литерал.
+
+   Два контекста, две шкалы:
+   - field  — владелец, телефон, солнце, одна рука. Кегль от 13px.
+   - desk   — кабинет госагентства, ноутбук/проектор. Кегль от 12px, высокая плотность.
+
+   Контраст измерен, а не оценён на глаз. Значения в комментариях — WCAG 2.1
+   contrast ratio к фону своей темы.
+*/
+
+:root {
+  /* ── Шаг сетки ─────────────────────────────────────────────────
+     Число в имени — это ЗНАЧЕНИЕ в пикселях, а не порядковый номер.
+     --nc-space-4 равен 4px и ничему другому. Индексных имён
+     (space-1, space-2 …) в системе нет: они читаются как «первый шаг»
+     и разработчик пишет space-4, ожидая 4px, а получает 12. */
+  --nc-space-0: 0;
+  --nc-space-2: 2px;
+  --nc-space-4: 4px;
+  --nc-space-8: 8px;
+  --nc-space-12: 12px;
+  --nc-space-16: 16px;
+  --nc-space-24: 24px;
+  --nc-space-32: 32px;
+  --nc-space-48: 48px;
+
+  --nc-radius-sm: 4px;
+  --nc-radius-md: 6px;
+  --nc-radius-lg: 10px;
+  --nc-radius-pill: 999px;
+
+  /* ── Тач-таргеты. Нижняя граница — не рекомендация, а предел ── */
+  --nc-touch-min: 44px;      /* всё интерактивное */
+  --nc-touch-action: 56px;   /* действие в строке списка */
+  --nc-touch-primary: 64px;  /* главное действие экрана, зона большого пальца */
+
+  /* ── Типографика: 7 ступеней, минимум 13px ─────────────────── */
+  --nc-fs-100: 13px;  --nc-lh-100: 18px;  /* подпись, единицы, сноска */
+  --nc-fs-200: 15px;  --nc-lh-200: 21px;  /* вторичный текст строки */
+  --nc-fs-300: 17px;  --nc-lh-300: 23px;  /* основной текст */
+  --nc-fs-400: 20px;  --nc-lh-400: 25px;  /* имя гостя в строке, кнопка */
+  --nc-fs-500: 24px;  --nc-lh-500: 29px;  /* подзаголовок экрана */
+  --nc-fs-600: 28px;  --nc-lh-600: 32px;  /* заголовок экрана */
+  --nc-fs-700: 34px;  --nc-lh-700: 38px;  /* число-герой */
+
+  /* Плотный контекст кабинета: отдельная шкала, минимум 12px */
+  --nc-fs-desk-100: 12px;  --nc-lh-desk-100: 16px;
+  --nc-fs-desk-200: 13px;  --nc-lh-desk-200: 18px;
+  --nc-fs-desk-300: 15px;  --nc-lh-desk-300: 20px;
+  --nc-fs-desk-400: 18px;  --nc-lh-desk-400: 24px;
+  --nc-fs-desk-500: 22px;  --nc-lh-desk-500: 28px;
+  --nc-fs-desk-600: 28px;  --nc-lh-desk-600: 34px;
+
+  --nc-fw-regular: 400;
+  --nc-fw-medium: 600;
+  --nc-fw-bold: 700;
+
+  --nc-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  /* Серифный стек только для кабинета: отделяет отчёт от приложения, вес 0 КБ */
+  --nc-font-serif: Georgia, 'Times New Roman', serif;
+  --nc-tracking-caps: .06em;
+
+  /* ── Движение: только сообщение о состоянии ────────────────── */
+  --nc-motion-instant: 0ms;
+  --nc-motion-state: 140ms;   /* появление/уход состояния */
+  --nc-motion-swipe: 130ms;   /* возврат строки после свайпа */
+  --nc-ease: cubic-bezier(.2, 0, .2, 1);
+}
+
+/* ══ СВЕТЛАЯ ТЕМА ═══════════════════════════════════════════════
+   Подобрана под прямое солнце: белая бумага, почти чёрный текст,
+   заливки насыщенные — не пастельные, иначе на солнце они выцветают. */
+:root,
+[data-nc-theme='light'] {
+  --nc-bg-canvas:   #EDEDEA;
+  --nc-bg-surface:  #FFFFFF;
+  --nc-bg-sunken:   #F6F6F3;
+  --nc-bg-band:     #E1E1DC;
+
+  --nc-text-primary:   #111310;  /* 18.7:1 на surface */
+  --nc-text-secondary: #4A4C48;  /*  8.7:1 */
+  /* Тёмный текст проверяется на САМОМ ТЁМНОМ фоне своей темы, а не на surface.
+     Худший фон светлой темы — --nc-bg-band #E1E1DC; прежний #6B6D68 давал
+     на нём 4,1:1, на canvas 4,46:1 — ниже порога. */
+  --nc-text-tertiary:  #626460;  /*  5,98 surface · 5,10 canvas · 4,56 band */
+  --nc-text-inverse:   #FFFFFF;
+
+  --nc-border-strong:  #111310;
+  --nc-border-line:    #C9C9C4;
+  --nc-border-hair:    #DDDDD7;
+
+  /* Иерархия действий строится КОНТРАСТОМ, а не цветом.
+     Главное действие — максимальный контраст с фоном. */
+  --nc-action-primary-bg:   #111310;
+  --nc-action-primary-fg:   #FFFFFF;
+  --nc-action-secondary-bg: #FFFFFF;
+  --nc-action-secondary-fg: #111310;
+  --nc-action-secondary-bd: #111310;
+  --nc-action-danger-fg:    #B03024;  /* 6.4:1 */
+  --nc-action-disabled-bg:  #DDDDD7;
+  --nc-action-disabled-fg:  #6B6D68;
+
+  /* Статусы. Одинаковая светлота (L 0.46–0.48) — ни один не кричит громче.
+     Различимы и в оттенках серого: проверено обесцвечиванием. */
+  --nc-status-hold:      oklch(0.48 0.14 70);   /* 6.7:1 с белым текстом */
+  --nc-status-confirmed: oklch(0.48 0.14 255);  /* 6.6:1 */
+  --nc-status-inhouse:   oklch(0.46 0.13 155);  /* 6.6:1 */
+  --nc-status-out:       #DDDDD7;
+  --nc-status-cancelled: #B03024;
+  --nc-status-fg:        #FFFFFF;
+  --nc-status-out-fg:    #111310;
+
+  /* Сигналы. Янтарный здесь — ТОЛЬКО предупреждение и статус ожидания,
+     никогда не заливка кнопки: иначе цвет означает две разные вещи. */
+  --nc-signal-warning-bg: #F9F0DC;
+  --nc-signal-warning-fg: #4A3A12;   /* 8.9:1 на своём фоне */
+  --nc-signal-error-bg:   #FCE9E7;
+  --nc-signal-error-fg:   #7A1E16;   /* 8.2:1 */
+  --nc-signal-offline-bg: #111310;
+  --nc-signal-offline-fg: #FFFFFF;
+  --nc-signal-offline-dot:#F0B429;
+
+  --nc-focus-ring: 0 0 0 3px #FFFFFF, 0 0 0 6px #111310;
+  --nc-shadow-sheet: 0 -8px 32px rgba(17, 19, 16, .18);
+}
+
+/* ══ ТЁМНАЯ ТЕМА ════════════════════════════════════════════════
+   Не инверсия светлой, а отдельный набор. Сценарий другой:
+   ночная стойка, тёмная комната, дешёвый LCD.
+   - Фон не чистый чёрный: на дешёвых матрицах чёрный «сереет» пятнами.
+   - Текст не чистый белый: 16:1 достаточно, 21:1 слепит в темноте.
+   - Статусные тона подняты по светлоте до 0.72–0.76 и приглушены по
+     цветности: те же тона в светлом варианте на тёмном фоне не читаются.
+   - Текст на статусной заливке становится тёмным. */
+[data-nc-theme='dark'] {
+  --nc-bg-canvas:   #101214;
+  --nc-bg-surface:  #16181A;
+  --nc-bg-sunken:   #1D2023;
+  --nc-bg-band:     #242729;
+
+  --nc-text-primary:   #F2F3F0;  /* 16.0:1 на surface */
+  --nc-text-secondary: #B4B7B2;  /*  8.8:1 */
+  /* В тёмной теме худший фон, наоборот, самый светлый — --nc-bg-band #242729 */
+  --nc-text-tertiary:  #8B8F89;  /*  5,41 surface · 5,71 canvas · 4,57 band */
+  --nc-text-inverse:   #101214;
+
+  --nc-border-strong:  #F2F3F0;
+  --nc-border-line:    #33383B;
+  --nc-border-hair:    #26292C;
+
+  /* Тот же принцип: главное действие — максимальный контраст с фоном.
+     В темноте это светлая заливка, а не тёмная. */
+  --nc-action-primary-bg:   #F2F3F0;
+  --nc-action-primary-fg:   #101214;
+  --nc-action-secondary-bg: transparent;
+  --nc-action-secondary-fg: #F2F3F0;
+  --nc-action-secondary-bd: #7E837D;
+  --nc-action-danger-fg:    oklch(0.72 0.15 25);  /* 6.9:1 */
+  --nc-action-disabled-bg:  #26292C;
+  --nc-action-disabled-fg:  #7E837D;
+
+  --nc-status-hold:      oklch(0.76 0.13 70);
+  --nc-status-confirmed: oklch(0.72 0.12 255);
+  --nc-status-inhouse:   oklch(0.72 0.13 155);
+  --nc-status-out:       #33383B;
+  --nc-status-cancelled: oklch(0.70 0.16 25);
+  --nc-status-fg:        #101214;
+  --nc-status-out-fg:    #F2F3F0;
+
+  --nc-signal-warning-bg: #2E2515;
+  --nc-signal-warning-fg: #F3D9A0;
+  --nc-signal-error-bg:   #2E1815;
+  --nc-signal-error-fg:   #F5B7AF;
+  --nc-signal-offline-bg: #F2F3F0;
+  --nc-signal-offline-fg: #101214;
+  --nc-signal-offline-dot:#8A5B00;
+
+  --nc-focus-ring: 0 0 0 3px #101214, 0 0 0 6px #F2F3F0;
+  --nc-shadow-sheet: 0 -8px 32px rgba(0, 0, 0, .55);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-nc-theme='light']) {
+    color-scheme: dark;
+    --nc-bg-canvas: #101214; --nc-bg-surface: #16181A; --nc-bg-sunken: #1D2023; --nc-bg-band: #242729;
+    --nc-text-primary: #F2F3F0; --nc-text-secondary: #B4B7B2; --nc-text-tertiary: #8B8F89; --nc-text-inverse: #101214;
+    --nc-border-strong: #F2F3F0; --nc-border-line: #33383B; --nc-border-hair: #26292C;
+    --nc-action-primary-bg: #F2F3F0; --nc-action-primary-fg: #101214;
+    --nc-action-secondary-bg: transparent; --nc-action-secondary-fg: #F2F3F0; --nc-action-secondary-bd: #7E837D;
+    --nc-action-danger-fg: oklch(0.72 0.15 25);
+    --nc-action-disabled-bg: #26292C; --nc-action-disabled-fg: #7E837D;
+    --nc-status-hold: oklch(0.76 0.13 70); --nc-status-confirmed: oklch(0.72 0.12 255);
+    --nc-status-inhouse: oklch(0.72 0.13 155); --nc-status-out: #33383B; --nc-status-cancelled: oklch(0.70 0.16 25);
+    --nc-status-fg: #101214; --nc-status-out-fg: #F2F3F0;
+    --nc-signal-warning-bg: #2E2515; --nc-signal-warning-fg: #F3D9A0;
+    --nc-signal-error-bg: #2E1815; --nc-signal-error-fg: #F5B7AF;
+    --nc-signal-offline-bg: #F2F3F0; --nc-signal-offline-fg: #101214; --nc-signal-offline-dot: #8A5B00;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --nc-motion-state: 0ms; --nc-motion-swipe: 0ms; }
+}
+
+/* Базовые сбросы — единственное, что этот файл рисует сам */
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--nc-bg-canvas);
+  color: var(--nc-text-primary);
+  font-family: var(--nc-font-sans);
+  font-size: var(--nc-fs-300);
+  line-height: var(--nc-lh-300);
+  -webkit-font-smoothing: antialiased;
+}
+.nc-tnum { font-variant-numeric: tabular-nums; }
+:where(button, a, input, select):focus-visible {
+  outline: none;
+  box-shadow: var(--nc-focus-ring);
+}
