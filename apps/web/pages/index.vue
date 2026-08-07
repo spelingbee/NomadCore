@@ -50,6 +50,7 @@ const listTitle = computed(() => {
    миром: статус меняется, а гость остаётся в номере. Промах пальцем или
    свайп мимо строки стоит дороже лишнего тапа, поэтому спрашиваем. */
 const pendingCheckout = ref<Booking | null>(null)
+const creating = ref(false)
 
 async function advance(booking: Booking) {
   if (booking.status === "CHECKED_IN") {
@@ -84,6 +85,11 @@ function toggleLocale() {
     </div>
     <NcButton variant="quiet" size="sm" @click="toggleLocale">
       {{ locale === 'ru' ? 'КЫР' : 'РУС' }}
+    </NcButton>
+    <!-- Создание брони заливки не получает НИКОГДА: это «всегда», а не
+         «сейчас», и последствий у него ноль. Значок 44×44 в шапке. -->
+    <NcButton variant="quiet" size="sm" :aria-label="t('today.newBooking')" @click="creating = true">
+      <NcIcon name="plus" />
     </NcButton>
   </header>
 
@@ -152,6 +158,8 @@ function toggleLocale() {
       </NcButton>
     </template>
   </NcSheet>
+
+  <NewBookingSheet v-if="creating" @close="creating = false" />
 </template>
 
 <style scoped>

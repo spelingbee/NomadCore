@@ -1,7 +1,7 @@
 import type { Booking, BookingStatus } from "~/types"
 import { NEXT } from "~/types"
 import { demoBookings } from "~/fixtures/demo"
-import { addDays, toDay } from "~/utils/dates"
+import { addDays, nights, toDay } from "~/utils/dates"
 
 /**
  * Брони объекта. Один общий кэш на приложение: «Сегодня», «Занятость» и
@@ -17,7 +17,7 @@ import { addDays, toDay } from "~/utils/dates"
 export function useBookings() {
 	const config = useRuntimeConfig()
 	const { request } = useApi()
-	const { today } = useProperty()
+	const { today, rooms } = useProperty()
 
 	const all = useState<Booking[]>("nc-bookings", () => [])
 	const pending = useState<boolean>("nc-bookings-pending", () => false)
@@ -116,6 +116,84 @@ export function useBookings() {
 		return NEXT[booking.status]
 	}
 
+	/**
+	 * Создание брони. POST /api/bookings — единственная мутация, кроме смены
+	 * статуса, которую умеет сервер.
+	 *
+	 * Гость передаётся ИНЛАЙНОМ (guestName): DTO это допускает, и отдельный
+	 * POST /api/guests не нужен. Это важно для офлайна — две мутации подряд,
+	 * из которых вторая зависит от id первой, очередь провести не смогла бы.
+	 *
+	 * priceTotal и source сервер принимает, но ИГНОРИРУЕТ: цену он считает
+	 * сам, source всегда "manual". Поэтому не отправляем их вовсе.
+	 *
+	 * Идемпотентности у эндпоинта нет: повторная отправка из очереди после
+	 * оборвавшейся сети создаст дубль. См. docs/WEB-API-GAPS.md.
+	 */
+	async function create(input: {
+		roomId: string
+		checkIn: string
+		checkOut: string
+		guestName: string
+	}): Promise<{ ok: true } | { ok: false; code: string }> {
+		if (config.public.demo) {
+			all.value = [...all.value, buildLocalBooking(input, "ok")]
+			return { ok: true }
+		}
+		try {
+			const saved = await request<Booking | { queued: true }>("/bookings", {
+				method: "POST",
+				body: input,
+			})
+			if ("queued" in saved) {
+				// Сети нет: мутация в очереди, показываем бронь локально
+				// с пометкой «Не отправлено». Экран не ждёт сервер.
+				all.value = [...all.value, buildLocalBooking(input, "pending")]
+			} else {
+				all.value = [...all.value, { ...saved, sync: "ok" }]
+			}
+			return { ok: true }
+		} catch (error) {
+			const data = (error as { data?: { code?: string } } | null)?.data
+			return { ok: false, code: data?.code ?? "CREATE_FAILED" }
+		}
+	}
+
+	/** Локальное представление ещё не подтверждённой сервером брони. */
+	function buildLocalBooking(
+		input: { roomId: string; checkIn: string; checkOut: string; guestName: string },
+		sync: "ok" | "pending",
+	): Booking {
+		const room = rooms.value.find((r) => r.id === input.roomId)
+		const nightCount = nights(input.checkIn, input.checkOut)
+		const rate = Number(room?.roomType?.basePrice ?? "0")
+		return {
+			id: `local-${input.roomId}-${input.checkIn}`,
+			propertyId: room?.propertyId ?? "",
+			roomId: input.roomId,
+			guestId: "",
+			checkIn: `${input.checkIn}T00:00:00.000Z`,
+			checkOut: `${input.checkOut}T00:00:00.000Z`,
+			// Сервер создаёт бронь сразу подтверждённой, не HOLD.
+			status: "CONFIRMED",
+			priceTotal: (rate * nightCount).toFixed(2),
+			source: "manual",
+			notes: null,
+			version: 0,
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			guest: {
+				id: "",
+				propertyId: room?.propertyId ?? "",
+				name: input.guestName,
+				phone: null,
+				notes: null,
+			},
+			room,
+			sync,
+		}
+	}
+
 	return {
 		all,
 		live,
@@ -130,5 +208,6 @@ export function useBookings() {
 		changeStatus,
 		nextStatus,
 		patchLocal,
+		create,
 	}
 }
