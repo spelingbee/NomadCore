@@ -9,6 +9,12 @@ import {
   GOV_REGIONS,
   GOV_SEASON,
 } from "~/fixtures/gov"
+import {
+  GVA_SERIES,
+  MISSING_METRICS,
+  OFFICIAL_CHECKED_AT,
+  OFFICIAL_FIGURES,
+} from "~/fixtures/gov-official"
 
 /**
  * Кабинет госагентства. Ноутбук или проектор, НЕ телефон.
@@ -88,7 +94,52 @@ const categoryRows = computed(() =>
       </dl>
     </header>
 
-    <!-- Честная подпись на самом экране, а не в примечании внизу -->
+    <!-- ══ ЧАСТЬ 1. Официальная статистика — НЕ наши данные ═══════════ -->
+    <section class="sec">
+      <h2 class="sec__title">{{ t('gov.off.title') }}</h2>
+      <p class="sec__lead">{{ t('gov.off.lead', { date: OFFICIAL_CHECKED_AT }) }}</p>
+
+      <ul class="figs">
+        <li v-for="f in OFFICIAL_FIGURES" :key="f.key" class="fig">
+          <span class="fig__label">{{ t(f.key) }}</span>
+          <span class="fig__value nc-tnum">{{ f.value }}</span>
+          <span class="fig__unit">{{ t(f.unitKey) }}</span>
+          <span class="fig__src">
+            {{ f.year }} · {{ t(f.source === 'nsc' ? 'gov.off.srcNsc' : 'gov.off.srcPress') }}
+          </span>
+        </li>
+      </ul>
+      <p class="sec__foot">{{ t('gov.off.pressNote') }}</p>
+
+      <div class="panel">
+        <BarChart :bars="GVA_SERIES" :title="t('gov.off.gvaChart')" :note="t('gov.off.gvaNote')" />
+      </div>
+    </section>
+
+    <!-- ══ ЧАСТЬ 2. Пробел ═══════════════════════════════════════════ -->
+    <section class="sec sec--gap">
+      <h2 class="sec__title">{{ t('gov.gap.title') }}</h2>
+      <p class="sec__lead">{{ t('gov.gap.lead', { date: OFFICIAL_CHECKED_AT }) }}</p>
+
+      <ul class="gaps">
+        <li v-for="m in MISSING_METRICS" :key="m.key" class="gap">
+          <span class="gap__mark" aria-hidden="true">—</span>
+          <span class="gap__name">{{ t(m.key) }}</span>
+          <span class="gap__why">{{ t(m.whyKey) }}</span>
+        </li>
+      </ul>
+
+      <p class="gap__punch">{{ t('gov.gap.punch') }}</p>
+    </section>
+
+    <!-- ══ ЧАСТЬ 3. Данные системы ═══════════════════════════════════ -->
+    <div class="band">
+      <h2 class="sec__title">{{ t('gov.nc.title') }}</h2>
+      <p class="sec__lead band__lead">{{ t('gov.nc.lead') }}</p>
+    </div>
+
+    <!-- Честная подпись относится ТОЛЬКО к этой части, поэтому стоит здесь,
+         а не под шапкой: выше неё — настоящая опубликованная статистика. -->
     <p class="synthetic">
       <span class="synthetic__tag">{{ t('gov.synthetic') }}</span>
       <span>{{ t('gov.syntheticNote') }}</span>
@@ -178,7 +229,11 @@ const categoryRows = computed(() =>
 
     <!-- ── Разрез 3: сезонность ──────────────────────────────────────── -->
     <div class="panel">
-      <SeasonCurve :months="GOV_SEASON" :table-total="totals.sold" />
+      <BarChart
+        :bars="GOV_SEASON.map((m) => ({ name: m.name, value: m.sold }))"
+        :title="t('gov.seasonTitle')"
+        :note="t('gov.seasonSum', { sum: n0(seasonTotal), total: n0(totals.sold) })"
+      />
     </div>
 
     <!-- ── Сверки: считаются в рантайме и выписаны словами ───────────── -->
@@ -266,6 +321,108 @@ const categoryRows = computed(() =>
 }
 .head__meta dt { display: inline; font-weight: var(--nc-fw-bold); color: var(--nc-text-primary); }
 .head__meta dd { display: inline; margin: 0; }
+
+/* ── Секции верхних двух частей ─────────────────────────────────── */
+.sec {
+  padding: var(--nc-space-16) var(--nc-space-24) var(--nc-space-24);
+  border-bottom: var(--nc-stroke-hair) solid var(--nc-border-line);
+}
+.sec--gap { background: var(--nc-bg-sunken); }
+.sec__title {
+  margin: 0;
+  font-family: var(--nc-font-serif);
+  font-size: var(--nc-fs-desk-500);
+  line-height: var(--nc-lh-desk-500);
+  font-weight: var(--nc-fw-bold);
+}
+/* Заголовок третьей части — полосой ВО ВСЮ ШИРИНУ: он делит экран надвое.
+   Фон стоит на обёртке, а не на абзаце: у абзаца ограничена мера строки,
+   и полоса обрывалась по длине текста, оставляя справа белый провал. */
+.band {
+  padding: var(--nc-space-16) var(--nc-space-24);
+  background: var(--nc-bg-band);
+  border-bottom: var(--nc-stroke-hair) solid var(--nc-border-line);
+}
+.band__lead { margin-bottom: 0; }
+.sec__lead {
+  margin: var(--nc-space-4) 0 var(--nc-space-16);
+  max-width: 100ch;
+  font-size: var(--nc-fs-desk-200);
+  line-height: var(--nc-lh-desk-200);
+  color: var(--nc-text-secondary);
+}
+.sec__foot {
+  margin: var(--nc-space-12) 0 0;
+  font-size: var(--nc-fs-desk-100);
+  line-height: var(--nc-lh-desk-200);
+  color: var(--nc-text-secondary);
+}
+
+/* Плитки официальных показателей */
+.figs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--nc-space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fig {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: var(--nc-space-8);
+  padding: var(--nc-space-8) var(--nc-space-12);
+  background: var(--nc-bg-sunken);
+  border-left: var(--nc-stroke-accent) solid var(--nc-border-line);
+}
+.fig__label {
+  grid-column: 1;
+  font-size: var(--nc-fs-desk-200);
+  line-height: var(--nc-lh-desk-200);
+}
+.fig__value {
+  grid-column: 2;
+  font-size: var(--nc-fs-desk-400);
+  line-height: var(--nc-lh-desk-400);
+  font-weight: var(--nc-fw-bold);
+}
+.fig__unit {
+  grid-column: 3;
+  font-size: var(--nc-fs-desk-100);
+  color: var(--nc-text-secondary);
+}
+.fig__src {
+  grid-column: 1 / -1;
+  font-size: var(--nc-fs-desk-100);
+  line-height: var(--nc-lh-desk-100);
+  color: var(--nc-text-tertiary);
+}
+
+/* Пробел: перечисление того, чего нет */
+.gaps { margin: 0; padding: 0; list-style: none; }
+.gap {
+  display: grid;
+  grid-template-columns: auto minmax(0, 22ch) 1fr;
+  align-items: baseline;
+  gap: var(--nc-space-8);
+  padding: var(--nc-space-4) 0;
+  font-size: var(--nc-fs-desk-200);
+  line-height: var(--nc-lh-desk-200);
+}
+.gap__mark { color: var(--nc-action-danger-text); font-weight: var(--nc-fw-bold); }
+.gap__name { font-weight: var(--nc-fw-bold); }
+.gap__why { color: var(--nc-text-secondary); }
+.gap__punch {
+  margin: var(--nc-space-16) 0 0;
+  padding: var(--nc-space-12) var(--nc-space-16);
+  max-width: 100ch;
+  background: var(--nc-bg-surface);
+  border-left: var(--nc-stroke-accent) solid var(--nc-status-hold);
+  font-size: var(--nc-fs-desk-300);
+  line-height: var(--nc-lh-desk-300);
+  font-weight: var(--nc-fw-bold);
+}
 
 .synthetic {
   display: flex;
