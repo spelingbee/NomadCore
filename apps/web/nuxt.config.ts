@@ -55,6 +55,8 @@ export default defineNuxtConfig({
 			{ code: "en", name: "English", file: "en.json" },
 		],
 		defaultLocale: "ru",
+		// fallbackLocale — опция vue-i18n, а не модуля, поэтому живёт
+		// в i18n/i18n.config.ts. Здесь её указывать нельзя: TS2353.
 		langDir: "locales",
 		strategy: "no_prefix",
 		// Сохраняем выбор языка между сессиями (cookie), иначе setLocale слетает при перезагрузке
