@@ -1,12 +1,36 @@
 <script setup lang="ts">
-defineProps<{ label: string; hint?: string; error?: string }>()
+/**
+ * Поле ввода. type/inputmode/autocomplete добавлены сверх исходного набора:
+ * без них примитив не мог сделать поле телефона и поле кода из SMS, и на
+ * экране входа пришлось бы верстать input мимо системы.
+ */
+withDefaults(
+  defineProps<{
+    label: string
+    hint?: string
+    error?: string
+    type?: 'text' | 'tel' | 'email' | 'number'
+    inputmode?: 'text' | 'tel' | 'numeric' | 'email'
+    autocomplete?: string
+    required?: boolean
+  }>(),
+  { type: 'text' },
+)
 const model = defineModel<string>()
 </script>
 
 <template>
   <label class="nc-field">
     <span class="nc-field__label">{{ label }}</span>
-    <input v-model="model" class="nc-field__input" type="text" :placeholder="hint" />
+    <input
+      v-model="model"
+      class="nc-field__input"
+      :type="type"
+      :inputmode="inputmode"
+      :autocomplete="autocomplete"
+      :required="required"
+      :placeholder="hint"
+    />
     <span v-if="error" class="nc-field__error">{{ error }}</span>
   </label>
 </template>

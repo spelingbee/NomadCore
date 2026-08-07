@@ -20,7 +20,10 @@ withDefaults(defineProps<{
   block?: boolean
   align?: 'center' | 'start'
   disabled?: boolean
-}>(), { variant: 'primary', size: 'md', align: 'center' })
+  /* Добавлено: без этого единственная кнопка системы не может отправить
+     форму, и Enter в поле ввода не срабатывает нигде. */
+  type?: 'button' | 'submit'
+}>(), { variant: 'primary', size: 'md', align: 'center', type: 'button' })
 </script>
 
 <template>
@@ -28,7 +31,7 @@ withDefaults(defineProps<{
     class="nc-btn"
     :class="['nc-btn--' + variant, 'nc-btn--size-' + size, { 'nc-btn--block': block, 'nc-btn--start': align === 'start' }]"
     :disabled="disabled"
-    type="button"
+    :type="type"
   >
     <slot />
   </button>
