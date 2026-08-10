@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body { @apply bg-canvas text-ink font-sans antialiased; }
+  /* Цифры в таблицах и сетке не должны прыгать при обновлении */
+  .tnum { font-variant-numeric: tabular-nums; }
+  /* Декоративных анимаций нет; оставшиеся переходы отключаются по системной настройке */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0ms !important; animation: none !important; }
+  }
+}

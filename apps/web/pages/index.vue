@@ -1,194 +1,264 @@
 <script setup lang="ts">
-type Booking = {
-	id: string
-	status: string
-	source: string
-	checkIn: string
-	checkOut: string
-	priceTotal: string
-	guest: { name: string; phone?: string }
-	room: { label: string; roomType?: { name: string } }
-}
-type AvailabilityRow = { roomId: string; cells: Array<{ bookingId?: string }> }
+import type { Booking } from "~/types"
 
-const { t, locale } = useI18n()
-const { request } = useApi()
+/**
+ * «Сегодня» отвечает на вопрос «что мне делать прямо сейчас» БЕЗ прокрутки.
+ *
+ * Раскладка выведена из высоты 360×780: 780 − 34 (связь) − 60 (шапка)
+ * − 76 (действие) − 56 (навигация) = 554px на содержимое. Шесть строк списка
+ * туда не влезают, поэтому первым идёт счётчик из трёх плиток: он и есть
+ * ответ. Список ниже — уже работа, а не ориентировка. Плитки заодно
+ * фильтруют список, чтобы не заводить отдельный элемент управления.
+ *
+ * Залитая кнопка на экране ровно одна — «Подтвердить · имя» внизу, и она
+ * есть только тогда, когда есть чего подтверждать. Когда ждущих броней нет,
+ * залитых кнопок ноль: экран ничего не требует, и это ответ, а не пустота.
+ */
+const { t, locale, setLocale } = useI18n()
+const { property, rooms, failed: propertyFailed } = useProperty()
+const {
+  holds,
+  arrivals,
+  departures,
+  failed: bookingsFailed,
+  changeStatus,
+} = useBookings()
 
-const today = new Date().toISOString().slice(0, 10)
-const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
+type Tile = "in" | "out" | "hold"
+const filter = ref<Tile | null>(null)
 
-const todayWords = computed(() =>
-	new Date().toLocaleDateString(locale.value === "ky" ? "ky-KG" : locale.value === "en" ? "en-US" : "ru-RU", {
-		weekday: "long",
-		day: "numeric",
-		month: "long",
-	}),
-)
+const tiles = computed(() => [
+  { key: "in" as const, n: arrivals.value.length, label: t("today.arrivals") },
+  { key: "out" as const, n: departures.value.length, label: t("today.departures") },
+  { key: "hold" as const, n: holds.value.length, label: t("today.waiting") },
+])
 
-const bookings = ref<Booking[]>([])
-const totalRooms = ref(0)
-const freeRooms = ref<number | null>(null)
+/** Порядок без фильтра — по срочности: решение → выезд → заезд. */
+const rows = computed<Booking[]>(() => {
+  if (filter.value === "hold") return holds.value
+  if (filter.value === "out") return departures.value
+  if (filter.value === "in") return arrivals.value
+  return [...holds.value, ...departures.value, ...arrivals.value]
+})
 
-async function load() {
-	const [list, availability] = await Promise.all([
-		request<Booking[]>("/bookings", { query: { from: today, to: tomorrow } }),
-		request<{ rooms: AvailabilityRow[] }>("/availability", {
-			query: { from: today, to: tomorrow },
-		}),
-	])
-	bookings.value = list
-	totalRooms.value = availability.rooms.length
-	freeRooms.value = availability.rooms.filter(
-		(r) => !r.cells.some((c) => c.bookingId),
-	).length
-}
-await load()
+const listTitle = computed(() => {
+  if (!filter.value) return t("today.priority")
+  return tiles.value.find((x) => x.key === filter.value)?.label ?? ""
+})
 
-const requests = computed(() => bookings.value.filter((b) => b.status === "HOLD"))
-const arrivals = computed(() =>
-	bookings.value.filter((b) => b.checkIn.slice(0, 10) === today && b.status === "CONFIRMED"),
-)
-const departures = computed(() =>
-	bookings.value.filter((b) => b.checkOut.slice(0, 10) === today && b.status === "CHECKED_IN"),
-)
+/* Выселение — единственное действие списка, которое расходится с физическим
+   миром: статус меняется, а гость остаётся в номере. Промах пальцем или
+   свайп мимо строки стоит дороже лишнего тапа, поэтому спрашиваем. */
+const pendingCheckout = ref<Booking | null>(null)
+const creating = ref(false)
 
-// Защита от двойного тапа (дизайн-система §3.1, §9)
-const busy = ref<string | null>(null)
-async function setStatus(b: Booking, status: string) {
-	if (busy.value) return
-	busy.value = b.id
-	try {
-		await request(`/bookings/${b.id}/status`, { method: "PATCH", body: { status } })
-		await load()
-	} finally {
-		busy.value = null
-	}
+async function advance(booking: Booking) {
+  if (booking.status === "CHECKED_IN") {
+    pendingCheckout.value = booking
+    return
+  }
+  const next = booking.status === "HOLD" ? "CONFIRMED" : "CHECKED_IN"
+  await changeStatus(booking, next).catch(() => {})
 }
 
-function fmtDay(iso: string): string {
-	return `${iso.slice(8, 10)}.${iso.slice(5, 7)}`
+async function confirmCheckout() {
+  const booking = pendingCheckout.value
+  pendingCheckout.value = null
+  if (booking) await changeStatus(booking, "CHECKED_OUT").catch(() => {})
+}
+
+const primaryHold = computed(() => holds.value[0] ?? null)
+
+function toggleLocale() {
+  setLocale(locale.value === "ru" ? "ky" : "ru")
 }
 </script>
 
 <template>
-	<main class="page">
-		<header class="head">
-			<h1>{{ t("today.title") }}</h1>
-			<p class="muted date">{{ todayWords }}</p>
-		</header>
+  <header class="head">
+    <div class="head__text">
+      <h1 class="head__name">{{ property?.name }}</h1>
+      <p class="head__meta">
+        <span v-if="property?.address">{{ property.address }}</span>
+        <span>{{ t('today.roomsCount', { n: rooms.length }) }}</span>
+      </p>
+    </div>
+    <NcButton variant="quiet" size="sm" @click="toggleLocale">
+      {{ locale === 'ru' ? 'КЫР' : 'РУС' }}
+    </NcButton>
+    <!-- Создание брони заливки не получает НИКОГДА: это «всегда», а не
+         «сейчас», и последствий у него ноль. Значок 44×44 в шапке. -->
+    <NcButton variant="quiet" size="sm" :aria-label="t('today.newBooking')" @click="creating = true">
+      <NcIcon name="plus" />
+    </NcButton>
+  </header>
 
-		<!-- Крупные числа дня (display 28/700, §4.1) -->
-		<div class="stats">
-			<div class="stat card">
-				<span class="display">{{ arrivals.length }}</span>
-				<span class="muted">{{ t("today.arrivals") }}</span>
-			</div>
-			<div class="stat card">
-				<span class="display">{{ departures.length }}</span>
-				<span class="muted">{{ t("today.departures") }}</span>
-			</div>
-			<div class="stat card" :class="{ hot: requests.length > 0 }">
-				<span class="display">{{ requests.length }}</span>
-				<span class="muted">{{ t("today.requests") }}</span>
-			</div>
-		</div>
-		<p v-if="freeRooms !== null && totalRooms > 0" class="free muted">
-			{{ t("today.free", { free: freeRooms, total: totalRooms }) }}
-		</p>
+  <main class="main">
+    <NcBanner v-if="propertyFailed || bookingsFailed" tone="warning">
+      {{ t('today.loadFailed') }}
+    </NcBanner>
 
-		<section v-if="requests.length">
-			<h2>{{ t("today.requests") }}</h2>
-			<article v-for="b in requests" :key="b.id" class="card booking hot-card">
-				<div class="line1">
-					<h2 class="name">{{ b.guest.name }}</h2>
-					<span class="badge st-HOLD">{{ t("booking.status.HOLD") }}</span>
-				</div>
-				<p class="meta muted">
-					{{ b.room.label }}<template v-if="b.room.roomType"> · {{ b.room.roomType.name }}</template>
-					· {{ fmtDay(b.checkIn) }} → {{ fmtDay(b.checkOut) }} · <span class="num">{{ b.priceTotal }}</span> сом
-				</p>
-				<div class="actions">
-					<button class="primary" :disabled="busy === b.id" @click="setStatus(b, 'CONFIRMED')">{{ t("booking.confirm") }}</button>
-					<button class="danger" :disabled="busy === b.id" @click="setStatus(b, 'CANCELLED')">{{ t("booking.reject") }}</button>
-					<a v-if="b.guest.phone" class="call" :href="`tel:${b.guest.phone}`" :aria-label="b.guest.phone">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-					</a>
-				</div>
-			</article>
-		</section>
+    <!-- Ответ на «что сейчас» — до всякой прокрутки -->
+    <div class="tiles">
+      <button
+        v-for="tile in tiles"
+        :key="tile.key"
+        type="button"
+        class="tile"
+        :class="{ 'tile--on': filter === tile.key }"
+        :aria-pressed="filter === tile.key"
+        @click="filter = filter === tile.key ? null : tile.key"
+      >
+        <span class="tile__n nc-tnum" :class="{ 'tile__n--zero': !tile.n }">{{ tile.n }}</span>
+        <span class="tile__label">{{ tile.label }}</span>
+      </button>
+    </div>
 
-		<section>
-			<h2>{{ t("today.arrivals") }}</h2>
-			<div v-if="!arrivals.length" class="empty">
-				<p>{{ t("today.emptyArrivals") }}. {{ t("today.emptyHint") }}</p>
-				<button @click="navigateTo('/calendar')">{{ t("today.toCalendar") }}</button>
-			</div>
-			<article v-for="b in arrivals" :key="b.id" class="card booking">
-				<div class="line1">
-					<h2 class="name">{{ b.guest.name }}</h2>
-					<span class="badge st-CONFIRMED">{{ t("booking.status.CONFIRMED") }}</span>
-				</div>
-				<p class="meta muted">
-					{{ b.room.label }}<template v-if="b.room.roomType"> · {{ b.room.roomType.name }}</template>
-					· → {{ fmtDay(b.checkOut) }} · <span class="num">{{ b.priceTotal }}</span> сом
-				</p>
-				<div class="actions">
-					<button class="primary" :disabled="busy === b.id" @click="setStatus(b, 'CHECKED_IN')">{{ t("today.checkIn") }}</button>
-					<a v-if="b.guest.phone" class="call" :href="`tel:${b.guest.phone}`" :aria-label="b.guest.phone">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-					</a>
-				</div>
-			</article>
-		</section>
+    <div class="listhead">
+      <h2 class="listhead__title">{{ listTitle }}</h2>
+      <span class="listhead__count nc-tnum">{{ rows.length }}</span>
+      <NcButton v-if="filter" variant="quiet" size="sm" @click="filter = null">
+        {{ t('common.all') }}
+      </NcButton>
+    </div>
 
-		<section>
-			<h2>{{ t("today.departures") }}</h2>
-			<p v-if="!departures.length" class="muted">{{ t("today.emptyDepartures") }}</p>
-			<article v-for="b in departures" :key="b.id" class="card booking">
-				<div class="line1">
-					<h2 class="name">{{ b.guest.name }}</h2>
-					<span class="badge st-CHECKED_IN">{{ t("booking.status.CHECKED_IN") }}</span>
-				</div>
-				<p class="meta muted">{{ b.room.label }}<template v-if="b.room.roomType"> · {{ b.room.roomType.name }}</template></p>
-				<div class="actions">
-					<button class="primary" :disabled="busy === b.id" @click="setStatus(b, 'CHECKED_OUT')">{{ t("today.checkOut") }}</button>
-					<a v-if="b.guest.phone" class="call" :href="`tel:${b.guest.phone}`" :aria-label="b.guest.phone">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-					</a>
-				</div>
-			</article>
-		</section>
+    <BookingRow
+      v-for="booking in rows"
+      :key="booking.id"
+      :booking="booking"
+      @advance="advance"
+      @open="navigateTo(`/booking/${booking.id}`)"
+    />
 
-		<!-- FAB «+ Бронь» (§3.1): главное действие продукта -->
-		<button class="fab" @click="navigateTo('/calendar?new=1')">
-			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-			{{ t("today.addBooking") }}
-		</button>
-	</main>
+    <p v-if="!rows.length" class="empty">{{ t('today.nothing') }}</p>
+  </main>
+
+  <!-- Главное действие экрана: ровно одно, залито, в нижней трети -->
+  <footer v-if="primaryHold" class="foot">
+    <NcButton size="lg" block @click="advance(primaryHold)">
+      {{ t('booking.confirmWithGuest', { guest: primaryHold.guest?.name ?? '' }) }}<template
+        v-if="holds.length > 1"
+      >&nbsp;{{ t('booking.andMore', { n: holds.length - 1 }) }}</template>
+    </NcButton>
+  </footer>
+
+  <NcSheet
+    v-if="pendingCheckout"
+    :title="t('booking.checkOutQuestion', { guest: pendingCheckout.guest?.name ?? '' })"
+    :subtitle="t('booking.checkOutHint', { room: pendingCheckout.room?.label ?? '' })"
+    @close="pendingCheckout = null"
+  >
+    <template #actions>
+      <NcButton variant="secondary" @click="pendingCheckout = null">
+        {{ t('common.cancel') }}
+      </NcButton>
+      <!-- Выселение не залито никогда, в том числе на своей шторке -->
+      <NcButton variant="careful" block @click="confirmCheckout">
+        {{ t('booking.checkOut') }}
+      </NcButton>
+    </template>
+  </NcSheet>
+
+  <NewBookingSheet v-if="creating" @close="creating = false" />
 </template>
 
 <style scoped>
-.page { display: flex; flex-direction: column; gap: 16px; flex: 1; }
-.head { display: flex; flex-direction: column; gap: 2px; }
-.date { text-transform: capitalize; }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.stat { display: flex; flex-direction: column; gap: 2px; padding: 12px; }
-.stat.hot { border-color: var(--color-accent); }
-.stat.hot .display { color: var(--color-accent); }
-.free { margin: -8px 0 0; }
-.booking { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
-.hot-card { border-color: var(--color-accent); }
-.line1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.name { margin: 0; }
-.meta { margin: 0; }
-.actions { display: flex; gap: 8px; align-items: stretch; }
-.actions button.primary { flex: 1; width: auto; min-height: 48px; }
-.actions button.danger { flex: 0 0 auto; }
-.call {
-	flex: 0 0 auto; width: 48px;
-	display: inline-flex; align-items: center; justify-content: center;
-	border: 1.5px solid var(--color-primary); border-radius: var(--radius-btn);
-	color: var(--color-primary);
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--nc-space-12);
+  flex: none;
+  padding: var(--nc-space-12);
+  background: var(--nc-bg-surface);
+  border-bottom: var(--nc-stroke-hair) solid var(--nc-border-line);
 }
-.call svg { width: 20px; height: 20px; }
+.head__text { flex: 1; min-width: 0; }
+.head__name {
+  margin: 0;
+  font-size: var(--nc-fs-400);
+  line-height: var(--nc-lh-400);
+  font-weight: var(--nc-fw-bold);
+}
+.head__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--nc-space-4) var(--nc-space-8);
+  margin: var(--nc-space-2) 0 0;
+  font-size: var(--nc-fs-100);
+  line-height: var(--nc-lh-100);
+  color: var(--nc-text-secondary);
+}
+
+.main { flex: 1; min-height: 0; overflow-y: auto; }
+
+.tiles {
+  display: flex;
+  background: var(--nc-bg-surface);
+  border-bottom: var(--nc-stroke-hair) solid var(--nc-border-line);
+}
+.tile {
+  flex: 1;
+  min-height: var(--nc-touch-min);
+  padding: var(--nc-space-8) var(--nc-space-4);
+  border: 0;
+  border-right: var(--nc-stroke-hair) solid var(--nc-border-hair);
+  border-bottom: var(--nc-stroke-accent) solid transparent;
+  background: var(--nc-bg-surface);
+  cursor: pointer;
+}
+.tile:last-child { border-right: 0; }
+/* Выбранная плитка помечена фоном И полосой — не одним лишь цветом */
+.tile--on {
+  background: var(--nc-bg-band);
+  border-bottom-color: var(--nc-border-strong);
+}
+.tile__n {
+  display: block;
+  font-size: var(--nc-fs-600);
+  line-height: var(--nc-lh-600);
+  font-weight: var(--nc-fw-bold);
+  color: var(--nc-text-primary);
+}
+.tile__n--zero { color: var(--nc-text-tertiary); }
+.tile__label {
+  display: block;
+  font-size: var(--nc-fs-100);
+  line-height: var(--nc-lh-100);
+  color: var(--nc-text-secondary);
+}
+
+.listhead {
+  display: flex;
+  align-items: center;
+  gap: var(--nc-space-8);
+  padding: var(--nc-space-12);
+}
+.listhead__title {
+  margin: 0;
+  font-size: var(--nc-fs-400);
+  line-height: var(--nc-lh-400);
+  font-weight: var(--nc-fw-bold);
+}
+.listhead__count {
+  font-size: var(--nc-fs-200);
+  line-height: var(--nc-lh-200);
+  color: var(--nc-text-secondary);
+}
+.listhead :deep(.nc-btn) { margin-left: auto; text-decoration: underline; }
+
+.empty {
+  margin: 0;
+  padding: var(--nc-space-24) var(--nc-space-16);
+  text-align: center;
+  font-size: var(--nc-fs-300);
+  line-height: var(--nc-lh-300);
+  color: var(--nc-text-secondary);
+}
+
+.foot {
+  flex: none;
+  padding: var(--nc-space-12);
+  background: var(--nc-bg-surface);
+  border-top: var(--nc-stroke-hair) solid var(--nc-border-line);
+}
 </style>

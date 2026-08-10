@@ -10,6 +10,7 @@ import {
 	Param,
 	Post,
 	Query,
+	Type,
 	UnauthorizedException,
 	UseGuards,
 } from "@nestjs/common"
@@ -56,7 +57,14 @@ type Bucket = { count: number; resetAt: number }
  * Простой in-memory rate limit по IP — без внешних зависимостей.
  * Для одного инстанса достаточно; при масштабировании — вынести в Redis.
  */
-function makeRateLimitGuard(limit: number, windowMs: number) {
+/* Возвращаемый тип указан ЯВНО. Без него TypeScript выводит тип
+   безымянного класса с приватным полем `buckets`, не может назвать его в
+   объявлении экспортируемых констант ниже и падает с TS4094 — из-за чего
+   не проходили ни `pnpm typecheck`, ни `nest build`. */
+function makeRateLimitGuard(
+	limit: number,
+	windowMs: number,
+): Type<CanActivate> {
 	@Injectable()
 	class RateLimitGuard implements CanActivate {
 		private readonly buckets = new Map<string, Bucket>()

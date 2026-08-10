@@ -4,10 +4,48 @@ export default defineNuxtConfig({
 	// Offline-first PWA: рендер только на клиенте.
 	// Dexie/IndexedDB недоступны в Node, поэтому SSR приводил к ошибкам dev-сервера.
 	ssr: false,
-	modules: ["@nuxtjs/i18n", "@vite-pwa/nuxt"],
+	modules: ["@nuxtjs/i18n", "@nuxtjs/tailwindcss", "@vite-pwa/nuxt"],
+
+	// Токены подключаются ПЕРВЫМИ, утилиты Tailwind — после них, иначе базовые
+	// правила tokens.css перекрывали бы утилиты, а не наоборот.
+	css: ["~/design-system/tokens.css"],
+	tailwindcss: { cssPath: "~/assets/css/tailwind.css" },
+
+	// Примитивы дизайн-системы регистрируются глобально без префикса пути:
+	// в шаблонах они пишутся как <NcButton>, а не <DesignSystemPrimitivesNcButton>.
+	// Массив ЗАМЕНЯЕТ умолчание, поэтому ~/components перечислен явно.
+	components: [
+		{ path: "~/design-system/primitives", pathPrefix: false },
+		{ path: "~/components", pathPrefix: false },
+	],
+
+	app: {
+		head: {
+			htmlAttrs: { lang: "ru" },
+			meta: [
+				{
+					name: "viewport",
+					content:
+						"width=device-width, initial-scale=1, viewport-fit=cover",
+				},
+			],
+		},
+	},
+
 	runtimeConfig: {
 		public: {
 			apiBase: process.env.NUXT_PUBLIC_API_BASE ?? "http://localhost:3001/api",
+			// Демо-режим: слой данных берёт fixtures/demo.ts вместо живого API.
+			// Включён по умолчанию, пока рядом нет поднятого бэкенда.
+			// Выключение: NUXT_PUBLIC_DEMO=0
+			demo: process.env.NUXT_PUBLIC_DEMO !== "0",
+			// Показывать ли блоки, которые нечем реализовать против текущего
+			// API: «Документы», «Продлить», «Ранний выезд», «Другой номер».
+			// ВЫКЛЮЧЕНО по умолчанию: владелец гостевого дома не должен читать
+			// «PATCH /api/bookings/:id не существует» — он прочтёт это как
+			// поломку. Включается для разбора: NUXT_PUBLIC_SHOW_API_GAPS=1
+			// Список пробелов в любом случае живёт в docs/WEB-API-GAPS.md.
+			showApiGaps: process.env.NUXT_PUBLIC_SHOW_API_GAPS === "1",
 		},
 	},
 	i18n: {
@@ -17,6 +55,8 @@ export default defineNuxtConfig({
 			{ code: "en", name: "English", file: "en.json" },
 		],
 		defaultLocale: "ru",
+		// fallbackLocale — опция vue-i18n, а не модуля, поэтому живёт
+		// в i18n/i18n.config.ts. Здесь её указывать нельзя: TS2353.
 		langDir: "locales",
 		strategy: "no_prefix",
 		// Сохраняем выбор языка между сессиями (cookie), иначе setLocale слетает при перезагрузке
@@ -33,8 +73,11 @@ export default defineNuxtConfig({
 			name: "NomadCore — Тетрадка",
 			short_name: "NomadCore",
 			description: "Цифровая тетрадка для гостевых домов КР",
-			theme_color: "#1c4532",
-			background_color: "#ffffff",
+			// Единственное место во фронте, где цвет записан литералом:
+			// манифест — это статический JSON, var(--nc-*) он не читает.
+			// Значения = --nc-action-primary-bg и --nc-bg-canvas светлой темы.
+			theme_color: "#111310",
+			background_color: "#EDEDEA",
 			display: "standalone",
 			lang: "ru",
 			icons: [

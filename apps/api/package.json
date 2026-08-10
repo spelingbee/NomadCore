@@ -9,7 +9,7 @@
     "lint": "eslint \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test src/bookings/domain.test.ts src/telegram/bot-flow.test.ts",
-    "test:races": "node --experimental-strip-types --test test/booking-races.integration.test.ts",
+    "test:races": "node --import tsx --test test/booking-races.integration.test.ts",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts"
