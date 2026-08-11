@@ -21,6 +21,8 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+    env:
+      DATABASE_URL: postgresql://nomadcore:nomadcore@localhost:5432/nomadcore_test
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -29,12 +31,20 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
+      # The Prisma client postinstall is in pnpm's ignored-build-scripts list,
+      # so generate it explicitly rather than relying on install side effects.
+      - run: pnpm --filter @nomadcore/api exec prisma generate
       - run: pnpm typecheck
-      - name: Prisma migrate (validate migrations apply cleanly)
-        run: pnpm --filter @nomadcore/api exec prisma migrate deploy
-        env:
-          DATABASE_URL: postgresql://nomadcore:nomadcore@localhost:5432/nomadcore_test
+      # Migrations must apply cleanly to an empty database, not just to a
+      # long-lived dev one.
+      - run: pnpm --filter @nomadcore/api exec prisma migrate deploy
+      # Domain unit tests: booking rules + Telegram dialogue machine.
       - run: pnpm test
-        env:
-          DATABASE_URL: postgresql://nomadcore:nomadcore@localhost:5432/nomadcore_test
+      # The Sprint 2 DoD invariant: two concurrent bookings of one room over
+      # overlapping dates -> exactly one survives. Needs the live database.
+      - run: pnpm --filter @nomadcore/api test:races
+
+# Note: `pnpm lint` is deliberately not a step. Neither workspace has an
+# ESLint 9 flat config (`eslint.config.js`), so the script fails to start on
+# both apps. Adding it back is a separate piece of work; a step that has never
+# passed does not belong in a green pipeline.
