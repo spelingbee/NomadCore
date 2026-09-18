@@ -3,10 +3,14 @@
 Фаза 0.1 «Тетрадка» + задел Фазы 0.2 (Telegram-бот, подписка).
 Цифровая замена бумажной тетрадки с анти-овербукингом, offline-first, ky/ru.
 
+**Статус:** проект запускается локально через Docker Compose; публичного деплоя нет.
+
+**Инженерный фокус:** защита от конкурентного овербукинга, offline-очередь мутаций и transactional outbox находятся в рабочем коде и покрыты тестами.
+
 ## Стек
 
 - **API:** NestJS 10 + Prisma 5 + PostgreSQL 16 + Redis 7 / BullMQ
-- **Web:** Nuxt 3 (PWA), Dexie (IndexedDB), i18n ky/ru
+- **Web:** Nuxt 4 (PWA), Dexie (IndexedDB), i18n ky/ru
 - **Монорепо:** pnpm workspaces (`apps/api`, `apps/web`)
 
 ## Структура
